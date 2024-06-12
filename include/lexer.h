@@ -11,7 +11,7 @@ typedef enum _token_type_e {
 	TOKEN_MINUS,
 	TOKEN_DIV,
 	TOKEN_MULT,
-	TOKEN_NUMBER,
+	TOKEN_INT,
 	TOKEN_VARIABLE,
 	TOKEN_INVALID
 } TokenType;

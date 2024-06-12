@@ -11,24 +11,28 @@ char **initialize_lines() {
 	return lines;
 }
 
-void read_file(const char *source, char **code_lines, int *line_counter) {
-	log_info("Leyendo %s", source);
+int read_file(const char *source, char **code_lines, int *line_counter) {
+	log_info("Reading %s", source);
 	FILE *code_file = fopen(source, "r");
 	if (!code_file) {
-		log_error("El archivo %s no existe");
-		return;
+		log_error("A file with %s as path doesn't exists", source);
+		return -1;
 	}
+
 	char *line = NULL;
 	ssize_t lenght = 0;
 	size_t buffer_size = 0;
 	*line_counter = 0;
+
 	while ((lenght = getline(&line, &buffer_size, code_file)) >= 0) {
 		strlcpy(code_lines[*line_counter], line, MAX_LINE_SIZE);
 		log_debug("code_line -> %s", code_lines[*line_counter]);
-        *line_counter += 1;
+		*line_counter += 1;
 	}
+
 	fclose(code_file);
 	free(line);
+	return 0;
 }
 
 void write_file(const char *destination, char **code, int length) {

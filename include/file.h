@@ -19,7 +19,7 @@ char **initialize_lines();
  * initialize_lines function).
  *  line_counter: will count how many lines of code are inside that file.
  * */
-void read_file(const char *source, char **code_lines, int *line_counter);
+int read_file(const char *source, char **code_lines, int *line_counter);
 
 /* Given a destination path and an array of code, this will write that code into
  * the file.
