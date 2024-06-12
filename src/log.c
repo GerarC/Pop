@@ -13,26 +13,26 @@ void logger(LogType type, const char *message, va_list args) {
 	char color[LOG_COLOR_SIZE];
 	FILE *output;
 	switch (type) {
-        case LOG_DEBUG:
-            strcpy(tag, "DEBUG");
-            strcpy(color, COLOR_DEBUG);
-            output = stdout;
-            break;
-        case LOG_INFO:
-            strcpy(tag, "INFO ");
-            strcpy(color, COLOR_INFO);
-            output = stdout;
-            break;
-        case LOG_WARN:
-            strcpy(tag, "WARN ");
-            output = stdout;
-            strcpy(color, COLOR_WARN);
-            break;
-        case LOG_ERROR:
-            strcpy(tag, "ERROR");
-            strcpy(color, COLOR_ERROR);
-            output = stderr;
-            break;
+	case LOG_DEBUG:
+		strcpy(tag, "DEBUG");
+		strcpy(color, COLOR_DEBUG);
+		output = stdout;
+		break;
+	case LOG_INFO:
+		strcpy(tag, "INFO ");
+		strcpy(color, COLOR_INFO);
+		output = stdout;
+		break;
+	case LOG_WARN:
+		strcpy(tag, "WARN ");
+		output = stdout;
+		strcpy(color, COLOR_WARN);
+		break;
+	case LOG_ERROR:
+		strcpy(tag, "ERROR");
+		strcpy(color, COLOR_ERROR);
+		output = stderr;
+		break;
 	}
 	if (PRINT_COLORS)
 		fprintf(output, "%s%s [%s]:%s ", color, date, tag, COLOR_RESET);

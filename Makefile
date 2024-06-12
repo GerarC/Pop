@@ -13,7 +13,7 @@ objs=$(src)main.o \
 	 $(src)file.o \
 	 $(src)lexer.o \
 
-all: compile run
+all: compile clean
 
 compile: $(objs)
 	@[ -d "$(build)" ] || { mkdir "$(build)"; }

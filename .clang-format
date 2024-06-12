@@ -1,3 +1,6 @@
 UseTab: Always
+AllowShortBlocksOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: Always
+AlignOperands: true
 IndentWidth: 4
 TabWidth: 4
