@@ -2,18 +2,55 @@
 #define LEXER_H
 
 #define MAX_NAME_SIZE 128
-#define MAX_TOKEN_STRING_SIZE 256
+#define MAX_TOK_STRING_SIZE 256
 
 /* Enum with all the kinds of tokens
  * */
 typedef enum _token_type_e {
-	TOKEN_PLUS,
-	TOKEN_MINUS,
-	TOKEN_DIV,
-	TOKEN_MULT,
-	TOKEN_INT,
-	TOKEN_VARIABLE,
-	TOKEN_INVALID
+	TOK_SYMBOL, // Variables
+	TOK_NUM,	// Number
+	TOK_STR,	// String
+	// Comparators
+	TOK_GT,	  // >
+	TOK_GEQT, // >=
+	TOK_LT,	  // <
+	TOK_LEQT, // <=
+	TOK_EQEQ, // ==
+	TOK_DIFF, // ==
+	// Assignment
+	TOK_PLUS_PLUS,	 // ++
+	TOK_MINUS_MINUS, // --
+	TOK_PLUS_EQUAL,	 // +=
+	TOK_MINUS_EQUAL, // -=
+	TOK_STAR_EQUAL,	 // *=
+	TOK_SLASH_EQUAL, // /=
+	TOK_EQUAL,		 // =
+	// Math
+	TOK_PLUS,  // +
+	TOK_MINUS, // -
+	TOK_SLASH, // /
+	TOK_STAR,  // * and pointers
+	TOK_MOD,   // %
+	// Reserved
+	TOK_NEW,	  // New
+	TOK_CLASS,	  // Class
+	TOK_LET,	  // Variable
+	TOK_CONST,	  // Constant
+	TOK_UNSIGNED, // Constant
+	TOK_ARROW,	  // ->
+	// TOK_IMPORT, // Constant
+	// Grouping
+	TOK_LPAREN, // (
+	TOK_RPAREN, // )
+	TOK_LCURLY, // {
+	TOK_RCURLY, // }
+	TOK_LBRACE, // [
+	TOK_RBRACE, // ]
+	TOK_LANGLE, // <
+	TOK_RANGLE, // >
+
+	// Invalid
+	TOK_INVALID
 } TokenType;
 
 /* Structure that saves the exact location of a token in the file
@@ -36,7 +73,7 @@ typedef struct _token_t {
 /* Receives an array code lines, it will tokenize the entire array and return a
  * Token array.
  * */
-void lex_program(const char *source, const char **program, int length);
+Token *lex_program(const char *source, const char **program, int length, int *lexer_len);
 
 /* Lex a single line and return the tokenized values.
  * */
@@ -56,5 +93,9 @@ static char *token_string(Token token);
  * order too free that mem at the final of the procecss;
  * */
 void free_token(Token *tok);
+
+/* Free a list of tokens.
+ * */
+void free_lexer(Token *tokens, int len);
 
 #endif // LEXER_H

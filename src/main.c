@@ -19,12 +19,13 @@ int main(int argc, char **argv) {
 	log_info("Pop compiler");
 
 	char **program;
-	int line_counter;
+	int program_len, lexer_len;
 	program = initialize_lines();
 
-	if (read_file(argv[2], program, &line_counter) == -1) return -1;
+	if (read_file(argv[2], program, &program_len) == -1) return -1;
 
-	lex_program(argv[2], (const char **)program, line_counter);
+    Token * tokens = lex_program(argv[2], (const char **)program, program_len, &lexer_len);
+	free_lexer(tokens, lexer_len);
 
 	if (strcmp(argv[1], "-c") == 0) {}
 

@@ -35,3 +35,4 @@ These are some of the resources I used:
 
 - [Compilers _Principles, Techniques & Tools_](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools)
 - [Porth](https://gitlab.com/tsoding/porth)
+- [Crafting Interpreters](https://craftinginterpreters.com/)
