@@ -20,14 +20,14 @@ Token *lex_program(const char *source, const char **program, int length,
 		token_count += tok_num_ln;
 		if (token_count == 0) tokens = (Token *)malloc(sizeof(Token) * 1);
 		else tokens = (Token *)realloc(tokens, sizeof(Token) * token_count);
-		for (int j = token_count - tok_num_ln; j < token_count; j++) {
-			tokens[j] = line_tokens[j % tok_num_ln];
-		}
+		int base =
+			token_count == tok_num_ln ? token_count : token_count - tok_num_ln;
+		for (int j = token_count - tok_num_ln; j < token_count; j++)
+			tokens[j] = line_tokens[j % base];
 		free(line_tokens);
 	}
-	for (int i = 0; i < token_count; i++) {
+	for (int i = 0; i < token_count; i++)
 		log_debug("%i\t%s", i, token_string(tokens[i]));
-	}
 
 	log_info("Lexing finished");
 	*lexer_len = token_count;
@@ -68,16 +68,17 @@ Token *lex_line(const char *source, int row, const char *line,
 			}
 
 			/*Parse the token to its required value*/
-			int val_len = curr - start;
-			char val_char[val_len + 1];
-			strncpy(val_char, start, val_len);
-			val_char[val_len] = '\0';
+			int len = curr - start;
+			char *lexeme = (char *)malloc(sizeof(char) * len + 1);
+			strncpy(lexeme, start, len);
+			lexeme[len] = '\0';
+
 			int *val = (int *)malloc(sizeof(int));
-			*val = atoi(val_char);
+			*val = atoi(lexeme);
 
 			/*Create a token and put it in the list*/
 			create_token(&(tokens[*token_count - 1]), TOK_NUM, loc,
-						 curr - start, NULL, val);
+						 curr - start, lexeme, val);
 		} else if (isspace(*curr)) {
 			while (isspace(*curr)) {
 				curr++;
@@ -105,23 +106,103 @@ Token *lex_line(const char *source, int row, const char *line,
 				else if (*curr == '-' || tok_type == TOK_MINUS)
 					tok_type = TOK_MINUS_MINUS;
 				else tok_type = TOK_INVALID;
-				log_debug("%i %i %i", tok_type, TOK_PLUS_PLUS, TOK_MINUS_MINUS);
 				curr++;
 				col++;
 			} else if (*curr == '/') goto ll_comment;
-			else if (*curr == '=') goto ll_assign;
+			else if (*curr == '=') goto ll_eq;
 
 			int len = curr - start;
-			char *val = (char *)malloc(sizeof(char) * len + 1);
-			strncpy(val, start, len);
-			val[len] = '\0';
+			char *lexeme = (char *)malloc(sizeof(char) * len + 1);
+			strncpy(lexeme, start, len);
+			lexeme[len] = '\0';
 
 			create_token(&(tokens[*token_count - 1]), tok_type, loc,
-						 curr - start, NULL, val);
+						 curr - start, lexeme, NULL);
+		} else if (*curr == '<' || *curr == '>' || *curr == '!') {
+			if (*curr == '<') tok_type = TOK_LT;
+			else if (*curr == '>') tok_type = TOK_GT;
+			else if (*curr == '!') tok_type = TOK_NOT;
+			else tok_type = TOK_INVALID;
+
+			start = curr;
+			loc.col = col;
+			curr++;
+			col++;
+			if (*curr == '=') {
+				if (tok_type == TOK_LT) tok_type = TOK_LEQT;
+				else if (tok_type == TOK_GT) tok_type = TOK_GEQT;
+				else if (tok_type == TOK_NOT) tok_type = TOK_DIFF;
+				curr++;
+				col++;
+			}
+
+			int len = curr - start;
+			char *lexeme = (char *)malloc(sizeof(char) * len + 1);
+			strncpy(lexeme, start, len);
+			lexeme[len] = '\0';
+
+			create_token(&(tokens[*token_count - 1]), tok_type, loc,
+						 curr - start, lexeme, NULL);
+
+		} else if (*curr == '=') {
+		ll_eq:
+			if (tok_type == TOK_PLUS) tok_type = TOK_PLUS_EQUAL;
+			else if (tok_type == TOK_MINUS) tok_type = TOK_MINUS_EQUAL;
+			else if (tok_type == TOK_STAR) tok_type = TOK_STAR_EQUAL;
+			else if (tok_type == TOK_SLASH) tok_type = TOK_SLASH_EQUAL;
+			else tok_type = TOK_ASSIGN;
+
+			if (start == NULL) {
+				start = curr;
+				loc.col = col;
+			}
+			curr++;
+			col++;
+			if (tok_type == TOK_ASSIGN && *curr == '=') {
+				tok_type = TOK_EQUAL;
+				curr++;
+				col++;
+			}
+
+			int len = curr - start;
+			char *lex = (char *)malloc(sizeof(char) * len + 1);
+			strncpy(lex, start, len);
+			lex[len] = '\0';
+
+			create_token(&(tokens[*token_count - 1]), tok_type, loc,
+						 curr - start, lex, NULL);
+		} else if (*curr == '/') {
+		ll_comment:
+			while (*curr != '\0')
+				curr++;
+			(*token_count)--;
+
+		} else if (isalpha(*curr)) {
+			start = curr;
+			loc.col = col;
+			char *lex = NULL;
+			if (compare_reserved(&curr, "true", &lex, &col) ||
+				compare_reserved(&curr, "false", &lex, &col))
+				tok_type = TOK_BOOL;
+			else tok_type = TOK_SYMBOL;
+
+			if (!isspace(*curr)) tok_type = TOK_SYMBOL;
+
+			if (tok_type == TOK_SYMBOL) {
+				while (isalpha(*curr)) {
+					curr++;
+					col++;
+				}
+				int len = curr - start;
+				lex = (char *)malloc(sizeof(char) * len + 1);
+				strncpy(lex, start, len);
+				lex[len] = '\0';
+			}
+			create_token(&(tokens[*token_count - 1]), tok_type, loc,
+						 strlen(lex), lex, NULL);
 		} else if (*curr == '(' || *curr == ')' || *curr == '{' ||
 				   *curr == '}' || *curr == '[' || *curr == ']' ||
 				   *curr == '<' || *curr == '>') { // Math simbols
-			TokenType tok_type;
 			if (*curr == '(') tok_type = TOK_LPAREN;
 			else if (*curr == ')') tok_type = TOK_RPAREN;
 			else if (*curr == '{') tok_type = TOK_LCURLY;
@@ -137,149 +218,133 @@ Token *lex_line(const char *source, int row, const char *line,
 			curr++;
 			col++;
 
-			char *val = (char *)malloc(sizeof(char) * 2);
-			strncpy(val, start, 1);
-			val[1] = '\0';
+			char *lex = (char *)malloc(sizeof(char) * 2);
+			strncpy(lex, start, 1);
+			lex[1] = '\0';
 
 			create_token(&(tokens[*token_count - 1]), tok_type, loc,
-						 curr - start, NULL, val);
-		} else if (*curr == '=') {
-		ll_assign:
-			if (tok_type == TOK_PLUS) tok_type = TOK_PLUS_EQUAL;
-			else if (tok_type == TOK_MINUS) tok_type = TOK_MINUS_EQUAL;
-			else if (tok_type == TOK_STAR) tok_type = TOK_STAR_EQUAL;
-			else if (tok_type == TOK_SLASH) tok_type = TOK_SLASH_EQUAL;
-			else tok_type = TOK_EQUAL;
-
-			if (start == NULL) {
-				start = curr;
-				loc.col = col;
-			}
-			curr++;
-			col++;
-
-			int len = curr - start;
-			char *val = (char *)malloc(sizeof(char) * len + 1);
-			strncpy(val, start, len);
-			val[len] = '\0';
-
-			create_token(&(tokens[*token_count - 1]), tok_type, loc,
-						 curr - start, NULL, val);
-		} else if (*curr == '/') {
-		ll_comment:
-			while (*curr != '\0')
-				curr++;
-			(*token_count)--;
-
+						 curr - start, lex, NULL);
 		} else {
 			start = curr;
 			loc.col = col;
 			curr++;
 			col++;
 
-			char *val = (char *)malloc(sizeof(char) * 2);
-			strncpy(val, start, 1);
-			val[1] = '\0';
+			char *lex = (char *)malloc(sizeof(char) * 2);
+			strncpy(lex, start, 1);
+			lex[1] = '\0';
 
 			create_token(&(tokens[*token_count - 1]), TOK_INVALID, loc,
-						 curr - start, NULL, val);
+						 curr - start, lex, NULL);
 		}
 	}
 
 	return tokens;
 }
 
-static char *token_string(Token token) {
+int compare_reserved(const char **curr, const char *rword, char **dest,
+					 int *col) {
+	int equals = 0;
+	int rwlen = strlen(rword);
+	if (strlen(*curr) >= rwlen)
+		for (int i = 0; i < rwlen; i++)
+			if ((*curr)[i] != rword[i]) return 0;
+	*dest = strdup(rword);
+	(*curr) += rwlen;
+	(*col) += rwlen;
+	return 1;
+}
+
+static char *token_string(Token tok) {
 	static char tkn_str[MAX_TOK_STRING_SIZE];
 	char *token_type;
-	switch (token.type) {
+	switch (tok.type) {
 		case TOK_INVALID:
 			token_type = strdup("Invalid");
 			break;
+
 		case TOK_PLUS:
-			token_type = strdup("Plus");
-			break;
 		case TOK_MINUS:
-			token_type = strdup("Minus");
-			break;
 		case TOK_SLASH:
-			token_type = strdup("Div");
-			break;
 		case TOK_STAR:
-			token_type = strdup("Mult");
-			break;
 		case TOK_MOD:
-			token_type = strdup("Module");
+			token_type = strdup("Math Op 'x'");
+			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[0];
 			break;
+
 		case TOK_NUM:
 			token_type = strdup("Integer");
 			break;
+
 		case TOK_LPAREN:
 		case TOK_LCURLY:
 		case TOK_LBRACE:
 		case TOK_LANGLE:
 			token_type = strdup("OpGroup 'x'");
-			token_type[strlen(token_type) - 2] = ((char *)token.value)[0];
+			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[0];
 			break;
+
 		case TOK_RPAREN:
 		case TOK_RCURLY:
 		case TOK_RBRACE:
 		case TOK_RANGLE:
 			token_type = strdup("ClGroup 'x'");
-			token_type[strlen(token_type) - 2] = ((char *)token.value)[0];
+			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[0];
 			break;
-		case TOK_EQUAL:
+
+		case TOK_ASSIGN:
 		case TOK_PLUS_EQUAL:
 		case TOK_MINUS_EQUAL:
 		case TOK_STAR_EQUAL:
 		case TOK_SLASH_EQUAL:
 			token_type = strdup("Assign 'x'");
-			token_type[strlen(token_type) - 2] = ((char *)token.value)[0];
+			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[0];
 			break;
+
 		case TOK_PLUS_PLUS:
 		case TOK_MINUS_MINUS:
 			token_type = strdup("Move one 'xx'");
-			token_type[strlen(token_type) - 3] = ((char *)token.value)[0];
-			token_type[strlen(token_type) - 2] = ((char *)token.value)[1];
+			token_type[strlen(token_type) - 3] = ((char *)tok.lexeme)[0];
+			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[1];
 			break;
+
 		case TOK_SYMBOL:
-			token_type = strdup("Variable");
+			token_type = strdup("Symbol");
 			break;
+
+		case TOK_BOOL:
+			token_type = strdup("Boolean");
+			break;
+
+		case TOK_EQUAL:
+		case TOK_DIFF:
+		case TOK_GEQT:
+		case TOK_LEQT:
+			token_type = strdup("Comparison 'xx'");
+			token_type[strlen(token_type) - 3] = ((char *)tok.lexeme)[0];
+			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[1];
+			break;
+
+		case TOK_GT:
+		case TOK_LT:
+			token_type = strdup("Comparison 'x'");
+			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[0];
+			break;
+
 		default:
+			log_warn("\tToken %i THIS SHOULD BE UNREACHEABLE", tok.type);
 			token_type = strdup("NOT IMPLEMENTED");
 			break;
 	}
 
-	if (token.type == TOK_PLUS || token.type == TOK_MINUS ||
-		token.type == TOK_SLASH || token.type == TOK_STAR ||
-		token.type == TOK_MOD || token.type == TOK_SYMBOL) {
-		char *val = (char *)token.value;
-		snprintf(tkn_str, sizeof(tkn_str),
-				 "Token{ type: %s, location: (%i, %i), value: %s }", token_type,
-				 token.location.line, token.location.col, val);
-	} else if (token.type == TOK_LPAREN || token.type == TOK_RPAREN ||
-			   token.type == TOK_LCURLY || token.type == TOK_RCURLY ||
-			   token.type == TOK_LBRACE || token.type == TOK_RBRACE ||
-			   token.type == TOK_LANGLE || token.type == TOK_RANGLE) {
-		char *val = (char *)token.value;
-		snprintf(tkn_str, sizeof(tkn_str),
-				 "Token{ type: %s, location: (%i, %i), value: %s }", token_type,
-				 token.location.line, token.location.col, val);
-	} else if (token.type == TOK_NUM) {
-		int *val = (int *)token.value;
+	if (tok.type == TOK_NUM) {
 		snprintf(tkn_str, MAX_TOK_STRING_SIZE,
 				 "Token{ type: %s, location: (%i, %i), value: %d }", token_type,
-				 token.location.line, token.location.col, *val);
-	} else if (token.type == TOK_INVALID) {
-		char *val = (char *)token.value;
-		snprintf(tkn_str, sizeof(tkn_str),
-				 "Token{ type: %s, location: (%i, %i), value: %s }", token_type,
-				 token.location.line, token.location.col, val);
+				 tok.location.line, tok.location.col, *(int *)tok.value);
 	} else {
-		char *val = (char *)token.value;
 		snprintf(tkn_str, sizeof(tkn_str),
-				 "Token{ type: %s, location: (%i, %i), value: %s }", token_type,
-				 token.location.line, token.location.col, val);
+				 "Token{ type: %s, location: (%i, %i), lexeme: %s }",
+				 token_type, tok.location.line, tok.location.col, tok.lexeme);
 	}
 
 	free(token_type);
@@ -291,7 +356,7 @@ void create_token(Token *token, TokenType type, TokenLocation loc, int length,
 	token->type = type;
 	token->location = loc;
 	token->length = length;
-	token->text = text;
+	token->lexeme = text;
 	token->value = value;
 }
 
@@ -300,7 +365,7 @@ void free_token(Token *tok) {
 		log_warn("Token to free should exist");
 		return;
 	}
-	if (tok->text != NULL) free(tok->text);
+	if (tok->lexeme != NULL) free(tok->lexeme);
 	if (tok->value != NULL) free(tok->value);
 	/*free(tok);*/;
 }
@@ -311,5 +376,5 @@ void free_lexer(Token *tokens, int len) {
 	}
 	free(tokens);
 
-	log_debug("lexer cleaned");
+	log_info("lexer cleaned");
 }

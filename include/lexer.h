@@ -10,12 +10,16 @@ typedef enum _token_type_e {
 	TOK_SYMBOL, // Variables
 	TOK_NUM,	// Number
 	TOK_STR,	// String
+	TOK_BOOL,	// String
+	TOK_ELN,	// EndLine
+	TOK_EOF,	// End of File
 	// Comparators
+    TOK_NOT,
 	TOK_GT,	  // >
 	TOK_GEQT, // >=
 	TOK_LT,	  // <
 	TOK_LEQT, // <=
-	TOK_EQEQ, // ==
+	TOK_EQUAL, // ==
 	TOK_DIFF, // ==
 	// Assignment
 	TOK_PLUS_PLUS,	 // ++
@@ -24,7 +28,7 @@ typedef enum _token_type_e {
 	TOK_MINUS_EQUAL, // -=
 	TOK_STAR_EQUAL,	 // *=
 	TOK_SLASH_EQUAL, // /=
-	TOK_EQUAL,		 // =
+	TOK_ASSIGN,		 // =
 	// Math
 	TOK_PLUS,  // +
 	TOK_MINUS, // -
@@ -66,14 +70,15 @@ typedef struct _token_t {
 	TokenType type;
 	TokenLocation location;
 	int length;
-	char *text;
+	char *lexeme;
 	void *value;
 } Token;
 
 /* Receives an array code lines, it will tokenize the entire array and return a
  * Token array.
  * */
-Token *lex_program(const char *source, const char **program, int length, int *lexer_len);
+Token *lex_program(const char *source, const char **program, int length,
+				   int *lexer_len);
 
 /* Lex a single line and return the tokenized values.
  * */
@@ -93,6 +98,8 @@ static char *token_string(Token token);
  * order too free that mem at the final of the procecss;
  * */
 void free_token(Token *tok);
+
+int compare_reserved(const char **curr, const char *rword, char **dest, int *col);
 
 /* Free a list of tokens.
  * */

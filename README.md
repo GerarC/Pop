@@ -23,11 +23,13 @@ it'll create a build dir where the executable will be.
 ## Milestones
 
 - [ ] Compiled to native instructions
-- [ ] Turing-complete
-- [ ] Statically typed
+- [ ] Turing-complete (Can emulate itself)
+- [ ] Statically typed (Like C)
+- [ ] Structs
+- [ ] Classes
 - [ ] Optimized
-- [ ] Crossplatform
-- [ ] Self-hosted (maybe)
+- [ ] Self-hosted (when the structs are done)
+- [ ] Crossplatform (maybe)
 
 ## Resources
 

@@ -1,13 +1,3 @@
-(34 + 35) / (440 - 20%21) * -1.3 // This is a comment
-// comment
-73 + 37 - 45 // More code
-73 * 45 // More code
-
-
-
-
-
-
-
-
-73 / 45 // More code
+300 + 120 > 80 - 11 == true
+!= <= >=
+false
