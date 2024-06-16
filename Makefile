@@ -9,9 +9,11 @@ build=./build/
 target=$(build)$(name)
 
 objs=$(src)main.o \
+	 $(src)common.o \
 	 $(src)log.o \
 	 $(src)file.o \
 	 $(src)lexer.o \
+	 $(src)parser.o  \
 
 all: compile clean
 

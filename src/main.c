@@ -1,8 +1,8 @@
 #include "../include/file.h"
 #include "../include/lexer.h"
+#include "../include/parser.h"
 #include "../include/log.h"
 #include <stdio.h>
-#include <string.h>
 
 void print_usage() {
 	log_error("You must pass a file to compile");
@@ -25,10 +25,11 @@ int main(int argc, char **argv) {
 	if (read_file(argv[2], program, &program_len) == -1) return -1;
 
     Token * tokens = lex_program(argv[2], (const char **)program, program_len, &lexer_len);
+
+
+    Parser parser = create_parser(tokens, lexer_len);
+
 	free_lexer(tokens, lexer_len);
-
-	if (strcmp(argv[1], "-c") == 0) {}
-
 	free_lines(program);
 	return 0;
 }
