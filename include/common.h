@@ -12,6 +12,7 @@ typedef enum _token_type_e {
 	TOK_STR,	// String
 	TOK_BOOL,	// String
 	TOK_ELN,	// EndLine
+    TOK_MAIN,   // Root of the file
 	TOK_EOF,	// End of File
 				// Comparators
 	TOK_NOT,// ! not

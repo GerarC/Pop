@@ -8,7 +8,7 @@ I reached something to be proud of.
    
 To achieve this languages I know that  I'll search a lot of references for the code, structure and lang ideas. In order to recognize that, in the resources section there are all the references I remember to write.   
    
-My greates reference and inspiration to begin this travel has been [Tsoding](https://www.youtube.com/@TsodingDaily).
+My greatest reference and inspiration to begin this travel has been [Tsoding](https://www.youtube.com/@TsodingDaily).
 
 ## Compile
 

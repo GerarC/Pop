@@ -107,7 +107,11 @@ char *token_string(Token tok) {
 			break;
 
 		case TOK_ELN:
-			token_type = strdup("end line");
+			token_type = strdup("line's end");
+			break;
+
+		case TOK_EOF:
+			token_type = strdup("file's end");
 			break;
 
 		default:

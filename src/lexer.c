@@ -26,8 +26,16 @@ Token *lex_program(const char *source, const char **program, int length,
 			tokens[j] = line_tokens[j % base];
 		free(line_tokens);
 	}
-	for (int i = 0; i < token_count; i++)
-		log_debug("%i\t%s", i, token_string(tokens[i]));
+
+	token_count++;
+	if (token_count == 0) tokens = (Token *)malloc(sizeof(Token) * 1);
+	else tokens = (Token *)realloc(tokens, sizeof(Token) * token_count);
+	TokenLocation loc = {-1, -1};
+	strlcpy(loc.file, source, MAX_NAME_SIZE);
+	create_token(&tokens[token_count - 1], TOK_EOF, loc, 1, NULL, NULL);
+
+	/* for (int i = 0; i < token_count; i++)
+			log_debug("%i\t%s", i, token_string(tokens[i])); */
 
 	log_info("Lexing finished");
 	*lexer_len = token_count;
