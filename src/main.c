@@ -2,13 +2,16 @@
 #include "../include/lexer.h"
 #include "../include/log.h"
 #include "../include/parser.h"
-#include <stdio.h>
+#include "../include/semantic.h"
+#include <stdlib.h>
+#include <string.h>
 
 void print_usage() {
-	log_error("You must pass a file to compile");
-	printf("USAGE:\n"
+	log_error("cli error.\n"
+        "USAGE:\n"
 		   "\t./pop -c <file> -> To compile the program\n"
-		   "\t./pop -s <file> -> To create only assembler code\n");
+		   "\t./pop -s <file> -> To create only assembler code\n"
+		   "\t./pop -o <file> -> output file\n");
 }
 
 int main(int argc, char **argv) {
@@ -19,21 +22,49 @@ int main(int argc, char **argv) {
 	log_info("Pop compiler");
 
 	char **program;
+	int compile = 0;
+	int assembly = 0;
+	char *source_file;
+	char *final_file;
 	int program_len, lexer_len;
 	program = initialize_lines();
 
-	if (read_file(argv[2], program, &program_len) == -1) return -1;
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "-c") == 0) {
+			if (compile == 1) goto cli_error;
+			source_file = argv[i + 1];
+			i += 2;
+			compile = 1;
+			continue;
+		} else if (strcmp(argv[i], "-c") == 0) {
+			final_file = argv[i + 1];
+			i += 2;
+			continue;
+		} else {
+		cli_error:
+			log_fatal("Bad argument '%s'", argv[i]);
+			exit(1);
+		}
+	}
 
-	Token *tokens =
-		lex_program(argv[2], (const char **)program, program_len, &lexer_len);
+	if (compile) {
+		if (read_file(source_file, program, &program_len) == -1) return -1;
 
-	Parser parser = create_parser(tokens, lexer_len);
-	Node *ast = parse_program(&parser);
+		Token *tokens = lex_program(source_file, (const char **)program,
+									program_len, &lexer_len);
 
-log_info("Print AST");
-    print_ast(ast,"x", 0, 1);
+		Parser parser = create_parser(tokens, lexer_len);
+		Node *ast = parse_program(&parser);
 
-	free_lexer(tokens, lexer_len);
-	free_lines(program);
+		log_info("Print AST");
+		print_ast(ast, "x", 0, 1);
+
+        semantic_analysis(ast);
+
+		free_lexer(tokens, lexer_len);
+		free_lines(program);
+		log_info("free ast");
+		free_ast(ast);
+	}
 	return 0;
 }

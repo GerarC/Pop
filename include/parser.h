@@ -1,7 +1,7 @@
 #ifndef EXPR_H
 
 #define EXPR_H
-#include "common.h"
+#include "token.h"
 
 typedef struct _node_t Node;
 
@@ -25,31 +25,31 @@ typedef struct _node_t {
 	int child_count;
 } Node;
 
+/* Struct that points tokens and helps in the syntax analysis labor
+ * */
 typedef struct _parser_t {
 	Token *tokens;
 	int length;
 	int pos;
 } Parser;
 
+/* Receives a token list (returned in the lexing step) and its size, will be
+ * used to create the AST.
+ * */
 Parser create_parser(Token *tokens, int length);
 
-Token current_token(Parser *parser);
-
-void next(Parser *parser);
-
+/* Takes the parser and create an AST of the program
+ * */
 Node *parse_program(Parser *parser);
 
-/* Prints an error message in a location of a token
+/* Prints the given AST, Receives the root node, a prefix used in the printing
+ * algorithm (it should be ab empty string), set a 0 to the 'is_left' and
+ * finally set as true 'is_root'.
  * */
-void print_paser_error(char *message, Token tok);
+void print_ast(Node *root, const char *prefix, int is_left, int is_root);
 
 /* Frees an AST by its root token
  * */
 void free_ast(Node *root);
-
-/* Prints the ast from a given root node, receives a level parameter to know
- * which parameter will calculates the number of spaces (starts in zero).
- * */
-void print_ast(Node *root, const char *prefix, int is_left, int is_root);
 
 #endif // !EXPR_H

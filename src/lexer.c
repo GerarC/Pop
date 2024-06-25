@@ -5,6 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+Token *lex_line(const char *source, int row, const char *line,
+				int *token_count);
+
+int compare_reserved(const char **curr, const char *rword, char **dest,
+					 int *col);
+
 Token *lex_program(const char *source, const char **program, int length,
 				   int *lexer_len) {
 	log_info("Lexing initialized");
@@ -34,8 +40,8 @@ Token *lex_program(const char *source, const char **program, int length,
 	strlcpy(loc.file, source, MAX_NAME_SIZE);
 	create_token(&tokens[token_count - 1], TOK_EOF, loc, 1, NULL, NULL);
 
-	/* for (int i = 0; i < token_count; i++)
-			log_debug("%i\t%s", i, token_string(tokens[i])); */
+	for (int i = 0; i < token_count; i++)
+		log_trace("%i\t%s", i, token_string(tokens[i]));
 
 	log_info("Lexing finished");
 	*lexer_len = token_count;
@@ -69,10 +75,21 @@ Token *lex_line(const char *source, int row, const char *line,
 			/*Count how many chars it has*/
 			start = curr;
 			loc.col = col;
+			tok_type = TOK_INT;
 		ll_int:
 			while (isdigit(*curr)) {
 				curr++;
 				col++;
+			}
+			if (*curr == '.' || *curr == 'E') {
+                log_trace("enters to float");
+				tok_type = TOK_FLOAT;
+				curr++;
+				col++;
+				while (isdigit(*curr)) {
+					curr++;
+					col++;
+				}
 			}
 
 			/*Parse the token to its required value*/
@@ -85,7 +102,7 @@ Token *lex_line(const char *source, int row, const char *line,
 			*val = atoi(lexeme);
 
 			/*Create a token and put it in the list*/
-			create_token(&(tokens[*token_count - 1]), TOK_NUM, loc,
+			create_token(&(tokens[*token_count - 1]), tok_type, loc,
 						 curr - start, lexeme, val);
 		} else if (isspace(*curr)) {
 			while (isspace(*curr)) {
@@ -108,8 +125,7 @@ Token *lex_line(const char *source, int row, const char *line,
 			curr++;
 			col++;
 
-			if (isdigit(*curr) && tok_type == TOK_MINUS) goto ll_int;
-			else if (*curr == '+' || *curr == '-') {
+			if (*curr == '+' || *curr == '-') {
 				if (*curr == '+' || tok_type == TOK_PLUS)
 					tok_type = TOK_PLUS_PLUS;
 				else if (*curr == '-' || tok_type == TOK_MINUS)
@@ -226,6 +242,8 @@ Token *lex_line(const char *source, int row, const char *line,
 				tok_type = TOK_AND;
 			else if (compare_reserved(&curr, "or", &lex, &col))
 				tok_type = TOK_OR;
+			else if (compare_reserved(&curr, "not", &lex, &col))
+				tok_type = TOK_NOT;
 			else if (compare_reserved(&curr, "if", &lex, &col))
 				tok_type = TOK_IF;
 			else if (compare_reserved(&curr, "new", &lex, &col))
@@ -321,6 +339,5 @@ void free_lexer(Token *tokens, int len) {
 		free_token(tokens + i);
 	}
 	free(tokens);
-
 	log_info("lexer cleaned");
 }

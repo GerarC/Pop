@@ -15,7 +15,7 @@ int read_file(const char *source, char **code_lines, int *line_counter) {
 	log_info("Reading %s", source);
 	FILE *code_file = fopen(source, "r");
 	if (!code_file) {
-		log_error("A file with %s as path doesn't exists", source);
+		log_error("file called '%s' doesn't exists", source);
 		return -1;
 	}
 

@@ -7,24 +7,26 @@
 /* Enum with all the kinds of tokens
  * */
 typedef enum _token_type_e {
-	TOK_SYMBOL, // Variables
-	TOK_NUM,	// Number
-	TOK_STR,	// String
-	TOK_BOOL,	// String
-	TOK_ELN,	// EndLine
-    TOK_MAIN,   // Root of the file
-	TOK_EOF,	// End of File
-				// Comparators
-	TOK_NOT,// ! not
-	TOK_GT,	   // >
-	TOK_GEQT,  // >=
-	TOK_LT,	   // <
-	TOK_LEQT,  // <=
-	TOK_EQUAL, // ==
-	TOK_DIFF,  // ==
-	TOK_OR,   //  || or
-	TOK_AND,   // && and
-	TOK_XOR,   // ^ xor
+	TOK_SYMBOL,	   // Variables
+	TOK_INT,	   // Integer
+	TOK_FLOAT,	   // Float
+	TOK_IMAGINARY, // Imaginary
+	TOK_STR,	   // Str
+	TOK_BOOL,	   // Booleans
+	TOK_ELN,	   // EndLine
+	TOK_MAIN,	   // Root of the file
+	TOK_EOF,	   // End of File
+				   // Comparators
+	TOK_NOT,	   // ! not
+	TOK_GT,		   // >
+	TOK_GEQT,	   // >=
+	TOK_LT,		   // <
+	TOK_LEQT,	   // <=
+	TOK_EQUAL,	   // ==
+	TOK_DIFF,	   // ==
+	TOK_OR,		   //  || or
+	TOK_AND,	   // && and
+	TOK_XOR,	   // ^ xor
 	// Assignment
 	TOK_PLUS_PLUS,	 // ++
 	TOK_MINUS_MINUS, // --
@@ -34,14 +36,14 @@ typedef enum _token_type_e {
 	TOK_SLASH_EQUAL, // /=
 	TOK_ASSIGN,		 // =
 	// Math
-	TOK_PLUS,  // +
-	TOK_MINUS, // -
-	TOK_SLASH, // /
-	TOK_STAR,  // * and pointers
-	TOK_MOD,   // %
-	TOK_BINOR,   //  |
-	TOK_BINAND,   // &
-	TOK_BINXOR,   // ^
+	TOK_PLUS,	// +
+	TOK_MINUS,	// -
+	TOK_SLASH,	// /
+	TOK_STAR,	// * and pointers
+	TOK_MOD,	// %
+	TOK_BINOR,	//  |
+	TOK_BINAND, // &
+	TOK_BINXOR, // ^
 	// Reserved
 	TOK_NEW,	  // New
 	TOK_CLASS,	  // Class

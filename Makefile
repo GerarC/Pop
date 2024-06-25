@@ -8,12 +8,14 @@ icd=./include/
 build=./build/
 target=$(build)$(name)
 
-objs=$(src)main.o \
-	 $(src)common.o \
+objs=$(src)main.o     \
+	 $(src)token.o     \
+	 $(src)symboltable.o\
 	 $(src)log.o \
 	 $(src)file.o \
 	 $(src)lexer.o \
-	 $(src)parser.o  \
+	 $(src)parser.o \
+	 $(src)semantic.o\
 
 all: compile clean
 

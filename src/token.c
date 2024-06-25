@@ -1,4 +1,4 @@
-#include "../include/common.h"
+#include "../include/token.h"
 #include "../include/log.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,8 +21,12 @@ char *token_string(Token tok) {
 			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[0];
 			break;
 
-		case TOK_NUM:
+		case TOK_INT:
 			token_type = strdup("Integer");
+			break;
+
+		case TOK_FLOAT:
+			token_type = strdup("float");
 			break;
 
 		case TOK_LPAREN:
@@ -120,7 +124,7 @@ char *token_string(Token tok) {
 			break;
 	}
 
-	if (tok.type == TOK_NUM) {
+	if (tok.type == TOK_INT) {
 		snprintf(tkn_str, MAX_TOK_STRING_SIZE,
 				 "Token{ type: %s, location: (%i, %i), value: %d }", token_type,
 				 tok.location.line, tok.location.col, *(int *)tok.value);

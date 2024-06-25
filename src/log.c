@@ -5,6 +5,7 @@
 #include <time.h>
 
 void logger(LogType type, const char *message, va_list args) {
+	if (type > LOG_LEVEL) return;
 	time_t now;
 	time(&now);
 	char *date = ctime(&now);
@@ -13,6 +14,11 @@ void logger(LogType type, const char *message, va_list args) {
 	char color[LOG_COLOR_SIZE];
 	FILE *output;
 	switch (type) {
+        case LOG_TRACE:
+			strcpy(tag, "TRACE");
+			strcpy(color, COLOR_TRACE);
+			output = stdout;
+			break;
 		case LOG_DEBUG:
 			strcpy(tag, "DEBUG");
 			strcpy(color, COLOR_DEBUG);
@@ -33,6 +39,11 @@ void logger(LogType type, const char *message, va_list args) {
 			strcpy(color, COLOR_ERROR);
 			output = stderr;
 			break;
+		case LOG_FATAL:
+			strcpy(tag, "FATAL");
+			strcpy(color, COLOR_FATAL);
+			output = stderr;
+			break;
 	}
 	if (PRINT_COLORS)
 		fprintf(output, "%s%s [%s]:%s ", color, date, tag, COLOR_RESET);
@@ -41,8 +52,14 @@ void logger(LogType type, const char *message, va_list args) {
 	fprintf(output, "\n");
 }
 
+void log_trace(const char *message, ...) {
+	va_list args;
+	va_start(args, message);
+	logger(LOG_TRACE, message, args);
+	va_end(args);
+}
+
 void log_debug(const char *message, ...) {
-	if (LOG_DEBUG > LOG_LEVEL) return;
 	va_list args;
 	va_start(args, message);
 	logger(LOG_DEBUG, message, args);
@@ -50,7 +67,6 @@ void log_debug(const char *message, ...) {
 }
 
 void log_info(const char *message, ...) {
-	if (LOG_INFO > LOG_LEVEL) return;
 	va_list args;
 	va_start(args, message);
 	logger(LOG_INFO, message, args);
@@ -58,7 +74,6 @@ void log_info(const char *message, ...) {
 }
 
 void log_warn(const char *message, ...) {
-	if (LOG_WARN > LOG_LEVEL) return;
 	va_list args;
 	va_start(args, message);
 	logger(LOG_WARN, message, args);
@@ -66,9 +81,15 @@ void log_warn(const char *message, ...) {
 }
 
 void log_error(const char *message, ...) {
-	if (LOG_ERROR > LOG_LEVEL) return;
 	va_list args;
 	va_start(args, message);
 	logger(LOG_ERROR, message, args);
+	va_end(args);
+}
+
+void log_fatal(const char *message, ...) {
+	va_list args;
+	va_start(args, message);
+	logger(LOG_FATAL, message, args);
 	va_end(args);
 }
