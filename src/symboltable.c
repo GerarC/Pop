@@ -1,0 +1,151 @@
+#include "../include/symboltable.h"
+#include "../include/log.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
+int add_symbol(Scope *scope, const char *type, const char *symbol) {
+	int type_idx = 0;
+	Scope *current = scope;
+	TableEntry curr_entry;
+	// Find the type
+	while (current != NULL) {
+		for (type_idx = 0; type_idx < scope->table.entry_num; type_idx++) {
+			curr_entry = scope->table.entries[type_idx];
+			// Outs of the loop if type is found
+			if (strcmp(curr_entry.type, type) == 0) goto out_add_loop;
+		}
+		current = current->parent;
+	}
+
+	// As all scopes have been iterated and no one owns the type,
+	// so it doesn't exist.
+	return -1;
+out_add_loop:
+
+	// Check if the symbol exists in the current scope
+	for (int i = 0; i < scope->table.entry_num; i++)
+		for (int j = 0; j < scope->table.entries[i].sym_num; j++)
+			if (strcmp(scope->table.entries[i].symbols[j].name, symbol) == 0)
+				return -2;
+
+	// Type exists but the current scope doesn't have any symbol of it
+	if (scope != current) type_idx = add_entry(scope, type);
+	if (type_idx == -2) return -4;
+
+	// Add the symbol to the table
+	int symbol_num = scope->table.entries[type_idx].sym_num;
+	if (symbol_num < MAX_ENTRY_SYMBOLS) {
+		// type_idx must be the correct because if the scope doesn't have it,
+		// add_entry returns it, in the other hand it's already set by the loop
+		strncpy(scope->table.entries[type_idx].symbols[symbol_num].name, symbol,
+				MAX_SYMBOL_SIZE);
+		assert(strcmp(scope->table.entries[type_idx].symbols[symbol_num].name,
+					  symbol) == 0);
+		scope->table.entries[type_idx].sym_num++;
+		return 0;
+	} else return -3;
+}
+
+int remove_symbol(Scope *scope, const char *symbol) {
+	int type_idx, sym_idx;
+	int found = 0;
+	for (type_idx = 0; type_idx < scope->table.entry_num; type_idx++)
+		for (int sym_idx = 0; sym_idx < scope->table.entries[type_idx].sym_num;
+			 sym_idx++)
+			if (strcmp(scope->table.entries[type_idx].symbols[sym_idx].name,
+					   symbol) == 0) {
+				found = 1;
+				goto out_remove_loops;
+			}
+
+out_remove_loops:
+	if (!found) return -1;
+	for (int i = sym_idx; i < scope->table.entries[type_idx].sym_num - 1; i++) {
+		scope->table.entries[type_idx].symbols[i] =
+			scope->table.entries[type_idx].symbols[i + 1];
+	}
+	scope->table.entries[type_idx].sym_num--;
+	return 0;
+}
+
+int add_entry(Scope *scope, const char *type) {
+	int entry_num = scope->table.entry_num;
+	for (int i = 0; i < entry_num; i++)
+		if (strcmp(scope->table.entries[i].type, type) == 0) return -1;
+
+	if (entry_num >= MAX_TABLE_ENTRIES) return -2;
+	strncpy(scope->table.entries[entry_num].type, type, MAX_TYPE_SIZE);
+	scope->table.entries[entry_num].sym_num = 0;
+	scope->table.entry_num++;
+	return entry_num;
+}
+
+int delete_entry(Scope *scope, const char *type) {
+	log_warn("DELETE ENTRY IS NOT IMPLEMENTED");
+	int type_idx = 0;
+	int entry_num = scope->table.entry_num;
+	int found = 0;
+	for (type_idx = 0; type_idx < entry_num; type_idx++)
+		if (strcmp(scope->table.entries[type_idx].type, type) == 0) {
+			found = 1;
+			goto out_delete_entry_loop;
+		}
+
+out_delete_entry_loop:
+	if (!found) return -1;
+	for (int i = type_idx; i < scope->table.entry_num - 1; i++)
+		scope->table.entries[i] = scope->table.entries[i + 1];
+	scope->table.entry_num--;
+	return 0;
+}
+
+const char *find_symbol(Scope *scope, const char *symbol) {
+	Scope *current = scope;
+	SymbolTable curr_table;
+	TableEntry curr_entry;
+	int symbol_num;
+	while (current != NULL) {
+		curr_table = scope->table;
+		for (int i = 0; i < scope->table.entry_num; i++) {
+			curr_entry = curr_table.entries[i];
+			symbol_num = curr_entry.sym_num;
+			for (int j = 0; j < symbol_num; j++) {
+				Symbol sym = curr_entry.symbols[j];
+				if (strcmp(symbol, sym.name) == 0) return symbol;
+			}
+		}
+		current = current->parent;
+	}
+	return NULL;
+}
+
+Scope *create_global_scope() {
+	log_info("Initialize scopes");
+	Scope *scope = (Scope *)malloc(sizeof(Scope));
+	if (scope == NULL) return NULL;
+	scope->table.entry_num = 0;
+	const char *builtin_types[BUILTIN_TYPE_NUM] = {
+		"object", "int", "float", "char", "bool", "string", "byte", "hex"};
+	for (int i = 0; i < BUILTIN_TYPE_NUM; i++)
+		add_entry(scope, builtin_types[i]);
+	return scope;
+}
+
+Scope *enter_scope(Scope *parent) {
+	Scope *scope = (Scope *)malloc(sizeof(Scope));
+	if (scope == NULL) return NULL;
+	scope->table.entry_num = 0;
+	scope->parent = parent;
+
+	return scope;
+}
+
+Scope *exit_scope(Scope *scope) {
+	Scope *parent = scope->parent;
+	free(scope);
+
+	if (parent == NULL) log_info("Close scopes");
+
+	return parent;
+}
