@@ -2,6 +2,7 @@
 
 #define EXPR_H
 #include "token.h"
+#include "config.h"
 
 typedef struct _node_t Node;
 
@@ -15,14 +16,16 @@ typedef enum {
 typedef struct _node_t {
 	Token token;
 	NodeType type;
+	/*How many children it has  (only used if node is multi-children)*/
+	int child_count;
 	/*Left node's child*/
 	Node *left;
 	/*Right node's child*/
 	Node *right;
 	/*A list of children if tree isn't binary*/
 	Node **children;
-	/*How many children it has  (only used if node is multi-children)*/
-	int child_count;
+    /*Type for the semantic analysis*/
+    char sem_type[MAX_SYMBOL_SIZE];
 } Node;
 
 /* Struct that points tokens and helps in the syntax analysis labor

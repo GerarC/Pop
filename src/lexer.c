@@ -62,6 +62,7 @@ Token *lex_line(const char *source, int row, const char *line,
 	strlcpy(loc.file, source, MAX_FILENAME_SIZE);
 
 	while (*curr != '\0') {
+        log_trace("current -> %c", *curr);
 		(*token_count)++;
 		tok_type = TOK_INVALID;
 		start = NULL;
@@ -81,16 +82,16 @@ Token *lex_line(const char *source, int row, const char *line,
 				curr++;
 				col++;
 			}
-			if (*curr == '.' || *curr == 'E') {
-                log_trace("enters to float");
-				tok_type = TOK_FLOAT;
-				curr++;
-				col++;
-				while (isdigit(*curr)) {
-					curr++;
-					col++;
-				}
-			}
+
+			/*if (*curr == '.' || *curr == 'E') {*/
+			/*	tok_type = TOK_FLOAT;*/
+			/*	curr++;*/
+			/*	col++;*/
+			/*	while (isdigit(*curr)) {*/
+			/*		curr++;*/
+			/*		col++;*/
+			/*	}*/
+			/*}*/
 
 			/*Parse the token to its required value*/
 			int len = curr - start;
@@ -126,9 +127,9 @@ Token *lex_line(const char *source, int row, const char *line,
 			col++;
 
 			if (*curr == '+' || *curr == '-') {
-				if (*curr == '+' || tok_type == TOK_PLUS)
+				if (*curr == '+' && tok_type == TOK_PLUS)
 					tok_type = TOK_PLUS_PLUS;
-				else if (*curr == '-' || tok_type == TOK_MINUS)
+				else if (*curr == '-' && tok_type == TOK_MINUS)
 					tok_type = TOK_MINUS_MINUS;
 				else tok_type = TOK_INVALID;
 				curr++;
@@ -305,6 +306,7 @@ Token *lex_line(const char *source, int row, const char *line,
 
 			create_token(&(tokens[*token_count - 1]), TOK_INVALID, loc,
 						 curr - start, lex, NULL);
+            log_fatal("Token %c is invalid", *start);
 		}
 	}
 
@@ -312,7 +314,7 @@ Token *lex_line(const char *source, int row, const char *line,
 		(*token_count)++;
 		tokens = (Token *)realloc(tokens, sizeof(Token) * (*token_count));
 		char *lex = strdup("eln");
-		create_token(&(tokens[*token_count - 1]), tok_type, loc, curr - start,
+		create_token(&(tokens[*token_count - 1]), TOK_ELN, loc, curr - start,
 					 lex, NULL);
 	}
 

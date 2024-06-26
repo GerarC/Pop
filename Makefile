@@ -1,6 +1,5 @@
 flags=-Wall -Wextra
 libs=-lbsd
-obj=gcc -c 
 out=gcc -o 
 name=pop
 src=./src/
@@ -28,6 +27,9 @@ example%:
 
 clean:
 		rm $(objs)
+
+debug:
+	gcc -g $(src)* -o $(target)_d
 
 run: 
 	$(target)
