@@ -1,13 +1,7 @@
 #ifndef SYMBOLTABLE_H
 #define SYMBOLTABLE_H
 
-#define MAX_TYPE_SIZE 128
-#define MAX_SYMBOL_SIZE 64
-#define MAX_ENTRY_SCOPES 256
-#define MAX_ENTRY_SYMBOLS 256
-#define MAX_TABLE_ENTRIES 128
-#define BUILTIN_TYPE_NUM 8
-
+#include "./config.h"
 /* It's a wrapper structure to represent a symbol in the entry table
  * */
 typedef struct _symbol_t {

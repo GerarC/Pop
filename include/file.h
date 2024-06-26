@@ -1,10 +1,7 @@
 #ifndef FILE_H
 #define FILE_H
 
-#define MAX_LINE_NUMBER 1000
-#define MAX_LINE_SIZE 500
-#define MAX_FILE_SIZE MAX_LINE_NUMBER *MAX_LINE_SIZE
-
+#include "./config.h"
 /* Initializes an array of MAX_LINE_NUMBER * MAX_LINE_SIZE
  * This will contain all the lines of the program.
  * */

@@ -37,7 +37,7 @@ Token *lex_program(const char *source, const char **program, int length,
 	if (token_count == 0) tokens = (Token *)malloc(sizeof(Token) * 1);
 	else tokens = (Token *)realloc(tokens, sizeof(Token) * token_count);
 	TokenLocation loc = {-1, -1};
-	strlcpy(loc.file, source, MAX_NAME_SIZE);
+	strlcpy(loc.file, source, MAX_FILENAME_SIZE);
 	create_token(&tokens[token_count - 1], TOK_EOF, loc, 1, NULL, NULL);
 
 	for (int i = 0; i < token_count; i++)
@@ -59,7 +59,7 @@ Token *lex_line(const char *source, int row, const char *line,
 	loc.line = row;
 	TokenType tok_type;
 	*token_count = 0;
-	strlcpy(loc.file, source, MAX_NAME_SIZE);
+	strlcpy(loc.file, source, MAX_FILENAME_SIZE);
 
 	while (*curr != '\0') {
 		(*token_count)++;

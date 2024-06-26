@@ -60,14 +60,17 @@ and I know that center of deploy to windows will make me have headaches.
 - [ ] Compiled to native instructions
 - [ ] Variables
 - [ ] Arrays
+- [ ] Chars
+- [ ] Strings
 - [ ] Functions
-- [ ] Statically typed (Like C)
+- [ ] Statically typed (Like Typescript)
 - [ ] Turing-complete (Can emulate itself)
 - [ ] Read and write files
 - [ ] Structs
 - [ ] Classes
-- [ ] Optimized
 - [ ] Self-hosted (when the classes are done)
+- [ ] Optimized
+- [ ] List comprehesion-like system
 
 ## Resources
 
@@ -81,8 +84,8 @@ These are some of the resources I used:
 ## Thanks
 
 - **Sagarkumar Badhiye:**
-    Thanks to _Sagarkumar_ the hindi man that saves this project without knowing.
-    He has a video where he explains what is the semantic analysis and gave me the idea of manage that using the table.
-    It was hard to reach that Idea even if the examples of _Crafting Interpreters_
-    because they explain that using Java classes and patterns of OOP programming.
-    Now i know that the symboltable is the right aproach. A link to the video that helped me to reach this is in the references.
+  Thanks to _Sagarkumar_ the hindi man that saves this project without knowing.
+  He has a video where he explains what is the semantic analysis and gave me the idea of manage that using the table.
+  It was hard to reach that Idea even if the examples of _Crafting Interpreters_
+  because they explain that using Java classes and patterns of OOP programming.
+  Now i know that the symboltable is the right aproach. A link to the video that helped me to reach this is in the references.

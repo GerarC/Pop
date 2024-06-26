@@ -1,8 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define MAX_NAME_SIZE 128
-#define MAX_TOK_STRING_SIZE 256
+#include "./config.h"
 
 /* Enum with all the kinds of tokens
  * */
@@ -72,7 +71,7 @@ typedef enum _token_type_e {
  * */
 typedef struct _token_location_t {
 	int line, col;
-	char file[MAX_NAME_SIZE];
+	char file[MAX_FILENAME_SIZE];
 } TokenLocation;
 
 /* Token structure represents a piece of code in its most important information
