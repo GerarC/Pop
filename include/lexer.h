@@ -6,8 +6,7 @@
 /* Receives an array code lines, it will tokenize the entire array and return a
  * Token array.
  * */
-Token *lex_program(const char *source, const char **program, int length,
-				   int *lexer_len);
+Token *lex_program(const char *source, const char *program, int *lexer_len);
 
 /* Free a list of tokens.
  * */

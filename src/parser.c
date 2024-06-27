@@ -120,8 +120,6 @@ Node *parse_program(Parser *parser) {
 			parser_error("Something wrong happened", statements->token);
 			return NULL;
 		}
-
-		parser->pos++;
 	}
 	statements->children = children;
 

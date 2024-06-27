@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+static Scope *scope;
 const char *compare_types(Node *a, Node *b);
 void statement_analysis(Node *stmt);
 void expression_analysis(Node *expr);
@@ -29,12 +30,10 @@ void typing_error(char *message, Node *a, Node *b) {
 }
 
 void semantic_analysis(Node *ast) {
-	Scope *scope = create_global_scope();
-	log_warn("SEMANTIC ANALYSIS NOT IMPLEMENTED");
+	scope = create_global_scope();
 
 	if (ast->token.type == TOK_MAIN)
 		for (int i = 0; i < ast->child_count; i++) {
-			log_trace("statement #%i", i);
 			statement_analysis(ast->children[i]);
 		}
 	else semantic_error("There is not entry point", ast);

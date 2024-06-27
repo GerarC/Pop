@@ -2,37 +2,30 @@
 #include "../include/log.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-char **initialize_lines() {
-	char **lines = (char **)malloc(sizeof(char *) * MAX_LINE_NUMBER);
-	for (int i = 0; i < MAX_LINE_NUMBER; i++)
-		lines[i] = malloc(sizeof(char) * MAX_LINE_SIZE);
-	return lines;
-}
-
-int read_file(const char *source, char **code_lines, int *line_counter) {
+char* read_file(const char *source){
 	log_info("Reading %s", source);
-	FILE *code_file = fopen(source, "r");
+
+    char *buffer = 0;
+    long lenght;
+
+
+	FILE *code_file = fopen(source, "rb");
+
 	if (!code_file) {
-		log_error("file called '%s' doesn't exists", source);
-		return -1;
+		log_fatal("file called '%s' doesn't exists", source);
+		exit(1);
 	}
 
-	char *line = NULL;
-	ssize_t lenght = 0;
-	size_t buffer_size = 0;
-	*line_counter = 0;
+    fseek(code_file, 0, SEEK_END);
+    lenght = ftell(code_file);
+    fseek(code_file, 0, SEEK_SET);
+    buffer = (char *) malloc(sizeof(char)*(lenght+1));
+    if(buffer) fread(buffer, sizeof(char), lenght, code_file);
+    fclose(code_file);
+    buffer[lenght] = '\0';
 
-	while ((lenght = getline(&line, &buffer_size, code_file)) >= 0) {
-		strlcpy(code_lines[*line_counter], line, MAX_LINE_SIZE);
-		log_debug("code_line -> %s", code_lines[*line_counter]);
-		*line_counter += 1;
-	}
-
-	fclose(code_file);
-	free(line);
-	return 0;
+    return buffer;
 }
 
 void write_file(const char *destination, char **code, int length) {
@@ -43,8 +36,6 @@ void write_file(const char *destination, char **code, int length) {
 	}
 }
 
-void free_lines(char **lines) {
-	for (int i = 0; i < MAX_LINE_NUMBER; i++)
-		free(lines[i]);
+void free_lines(char *lines) {
 	free(lines);
 }

@@ -80,6 +80,7 @@ These are some of the resources I used:
 - [Porth](https://gitlab.com/tsoding/porth)
 - [Crafting Interpreters](https://craftinginterpreters.com/)
 - [Semantic Analysis](https://www.youtube.com/watch?v=cC8YRnDGMwI&ab_channel=Dr.SagarkumarBadhiye)
+- [Another example of compiler](https://www.youtube.com/watch?v=-4RmhDy0A2s&list=PLRnI_2_ZWhtA_ZAzEa8uJF8wgGF0HjjEz&ab_channel=CobbCoding)
 
 ## Thanks
 
