@@ -7,6 +7,9 @@
  *
  * Input:
  *  source: path of the file.
+ *
+ * Returns:
+ *  code (char): the readed code. must be freed
  * */
 char* read_file(const char *source);
 
@@ -14,9 +17,5 @@ char* read_file(const char *source);
  * the file.
  * */
 void write_file(const char *destination, char **code, int length);
-
-/* Frees an array that has been initialized with initialize_lines
- * */
-void free_lines(char *lines);
 
 #endif // FILE_H

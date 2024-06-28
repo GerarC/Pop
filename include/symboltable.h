@@ -14,7 +14,7 @@ typedef struct _symbol_t {
 typedef struct _table_entry_t {
 	char type[MAX_TYPE_SIZE];
 	Symbol symbols[MAX_ENTRY_SYMBOLS];
-	int sym_num;
+	int count;
 } TableEntry;
 
 /* Symbol Table has a list of Entries. It means that has a list of types and the
@@ -22,7 +22,7 @@ typedef struct _table_entry_t {
  * */
 typedef struct _symbol_table {
 	TableEntry entries[MAX_ENTRY_SCOPES];
-	int entry_num;
+	int count;
 } SymbolTable;
 
 /* Manages symbols and types that are allowed in a determined scope block

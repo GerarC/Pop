@@ -52,7 +52,6 @@ Node *parse_factor(Parser *parser);
 Node *parse_unary(Parser *parser);
 Node *parse_literal(Parser *parser);
 
-
 Parser create_parser(Token *tokens, int length) {
 	Parser parser = {tokens, length, 0};
 	return parser;
@@ -96,8 +95,7 @@ void next(Parser *parser) {
 
 Node *parse_program(Parser *parser) {
 	log_info("Parsing Tokens");
-	TokenLocation loc = {0, 0, "root"};
-	Token tok = {TOK_MAIN, loc, 0, NULL, NULL};
+	Token tok = {TOK_MAIN, parser->tokens[0].location, 1, NULL, NULL};
 
 	Node *statements = create_mulnode(tok, 0, NULL);
 	Node *current = NULL;
@@ -218,7 +216,8 @@ Node *parse_unary(Parser *parser) {
 Node *parse_literal(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *lit = NULL;
-	if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_BOOL || tok.type == TOK_SYMBOL) {
+	if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_BOOL ||
+		tok.type == TOK_SYMBOL) {
 		lit = create_mulnode(tok, 0, NULL);
 		next(parser);
 	} else if (tok.type == TOK_LPAREN) {

@@ -7,14 +7,15 @@ icd=./include/
 build=./build/
 target=$(build)$(name)
 
-objs=$(src)main.o     \
-	 $(src)token.o     \
-	 $(src)symboltable.o\
+objs=$(src)ir.o \
 	 $(src)log.o \
 	 $(src)file.o \
-	 $(src)lexer.o \
-	 $(src)parser.o \
-	 $(src)semantic.o\
+	 $(src)main.o  \
+	 $(src)token.o  \
+	 $(src)lexer.o	 \
+	 $(src)parser.o   \
+	 $(src)semantic.o  \
+	 $(src)symboltable.o\
 
 all: compile clean
 

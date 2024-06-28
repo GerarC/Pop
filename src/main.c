@@ -1,4 +1,5 @@
 #include "../include/file.h"
+#include "../include/ir.h"
 #include "../include/lexer.h"
 #include "../include/log.h"
 #include "../include/parser.h"
@@ -50,14 +51,17 @@ int main(int argc, char **argv) {
 		log_trace("%s\n%s", source_file, program);
 
 		Token *tokens = lex_program(source_file, program, &lexer_len);
-		free_lines((char *)program);
 
 		Parser parser = create_parser(tokens, lexer_len);
 		Node *ast = parse_program(&parser);
 
 		log_info("Print AST");
-		print_ast(ast, "x", 0, 1);
+		print_ast(ast, "", 0, 1);
 		semantic_analysis(ast);
+		IntermediateRepresentation *ir = create_intermediate_representation(ast);
+        print_ir(ir);
+
+
 		free_lexer(tokens, lexer_len);
 		log_info("free ast");
 		free_ast(ast);

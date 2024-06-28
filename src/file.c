@@ -35,7 +35,3 @@ void write_file(const char *destination, char **code, int length) {
 		fputs("\n", code_file);
 	}
 }
-
-void free_lines(char *lines) {
-	free(lines);
-}

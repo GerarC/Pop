@@ -30,6 +30,7 @@ void typing_error(char *message, Node *a, Node *b) {
 }
 
 void semantic_analysis(Node *ast) {
+    log_info("Semantic Analysis starts");
 	scope = create_global_scope();
 
 	if (ast->token.type == TOK_MAIN)
@@ -39,6 +40,7 @@ void semantic_analysis(Node *ast) {
 	else semantic_error("There is not entry point", ast);
 
 	exit_scope(scope);
+    log_info("Semantic Analysis ends");
 }
 
 const char *compare_types(Node *a, Node *b) {
