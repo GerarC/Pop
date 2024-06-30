@@ -36,6 +36,20 @@ By the moment the steps I've followed to reach the compiler has been:
    are being consistent operating types with compatible types in a determined scope of the application.
    I can analyze this through scopes that saves types and symbols of each code block inside a symbol table.
 
+4. _Intermediate Representation:_
+   Now, In this step I convert the verified AST into three address code or "TAC". This tac is easier to generate ASM with.
+   In my code the Intermediate Representation is a list of operations and the operations is represented by the next structure:
+
+   ```C
+   typedef struct _operation_t {
+        IrOperationType type;
+        IrValue arg1;
+        IrValue arg2;
+   } IrOperation;
+   ```
+
+   these `arg1` and `arg2` can be a number or the index into another Operation, this is to connect easily when the IR transforms into assembly.
+
 ## Compile
 
 ### Linux
@@ -81,6 +95,7 @@ These are some of the resources I used:
 - [Crafting Interpreters](https://craftinginterpreters.com/)
 - [Semantic Analysis](https://www.youtube.com/watch?v=cC8YRnDGMwI&ab_channel=Dr.SagarkumarBadhiye)
 - [Another example of compiler](https://www.youtube.com/watch?v=-4RmhDy0A2s&list=PLRnI_2_ZWhtA_ZAzEa8uJF8wgGF0HjjEz&ab_channel=CobbCoding)
+- [Intermediate Representation](https://www.youtube.com/watch?v=u2qLQep_Wzw&ab_channel=AnitaR)
 
 ## Thanks
 
@@ -90,3 +105,7 @@ These are some of the resources I used:
   It was hard to reach that Idea even if the examples of _Crafting Interpreters_
   because they explain that using Java classes and patterns of OOP programming.
   Now i know that the symboltable is the right aproach. A link to the video that helped me to reach this is in the references.
+
+- **AnitaR:**
+  Oh thanks god to have found her video explaining three address code. Literally i had no idea how to implement that and
+  it was just watch that video to shine my mind into something functional. I love U Anita.

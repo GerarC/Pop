@@ -14,16 +14,15 @@ typedef enum {
 typedef enum {
 	IRVAL_INT,
 	IRVAL_FLOAT,
-	IRVAL_VARIABLE,
+	IRVAL_INDEX,
 } IrValueType;
 
 typedef struct _ir_value_t {
 	IrValueType type;
 	union Data {
-		int i_val;
-		float f_val;
-		char c_val;
-		void *other;
+		int ival;
+		float fval;
+		int index;
 	} data;
 } IrValue;
 
@@ -31,12 +30,10 @@ typedef struct _ir_operation_t {
 	IrOperationType type;
 	IrValue arg1; // can be null
 	IrValue arg2; // can be null
-	IrValue arg3; // can be null
-	IrValue result;
 } IrOperation;
 
 typedef struct _intermediary_representation_t {
-	IrOperation *intructions;
+	IrOperation *instructions;
 	int count;
 	int capacity;
 } IntermediateRepresentation;
