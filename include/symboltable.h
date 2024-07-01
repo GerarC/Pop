@@ -2,6 +2,7 @@
 #define SYMBOLTABLE_H
 
 #include "./config.h"
+#include "./typedef.h"
 /* It's a wrapper structure to represent a symbol in the entry table
  * */
 typedef struct _symbol_t {
@@ -14,7 +15,7 @@ typedef struct _symbol_t {
 typedef struct _table_entry_t {
 	char type[MAX_TYPE_SIZE];
 	Symbol symbols[MAX_ENTRY_SYMBOLS];
-	int count;
+	size count;
 } TableEntry;
 
 /* Symbol Table has a list of Entries. It means that has a list of types and the
@@ -22,7 +23,7 @@ typedef struct _table_entry_t {
  * */
 typedef struct _symbol_table {
 	TableEntry entries[MAX_ENTRY_SCOPES];
-	int count;
+	size count;
 } SymbolTable;
 
 /* Manages symbols and types that are allowed in a determined scope block

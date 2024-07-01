@@ -3,12 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char* read_file(const char *source){
+char *read_file(const char *source) {
 	log_info("Reading %s", source);
 
-    char *buffer = 0;
-    long lenght;
-
+	char *buffer = 0;
+	long lenght;
 
 	FILE *code_file = fopen(source, "rb");
 
@@ -17,21 +16,20 @@ char* read_file(const char *source){
 		exit(1);
 	}
 
-    fseek(code_file, 0, SEEK_END);
-    lenght = ftell(code_file);
-    fseek(code_file, 0, SEEK_SET);
-    buffer = (char *) malloc(sizeof(char)*(lenght+1));
-    if(buffer) fread(buffer, sizeof(char), lenght, code_file);
-    fclose(code_file);
-    buffer[lenght] = '\0';
+	fseek(code_file, 0, SEEK_END);
+	lenght = ftell(code_file);
+	fseek(code_file, 0, SEEK_SET);
+	buffer = (char *)malloc(sizeof(char) * (lenght + 1));
+	if (buffer) fread(buffer, sizeof(char), lenght, code_file);
+	fclose(code_file);
+	buffer[lenght] = '\0';
 
-    return buffer;
+	return buffer;
 }
 
-void write_file(const char *destination, char **code, int length) {
-	FILE *code_file = fopen(destination, "w");
-	for (int i = 0; i < length; i++) {
-		fputs(code[length], code_file);
-		fputs("\n", code_file);
-	}
+void write_file(const char *destination, Assembler *code) {
+	FILE *destination_f = fopen(destination, "w");
+	for (int i = 0; i < code->count; i++)
+		fputs(code->lines[i], destination_f);
+	fclose(destination_f);
 }

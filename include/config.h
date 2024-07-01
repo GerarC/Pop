@@ -18,5 +18,8 @@
 #define MAX_TABLE_ENTRIES 128
 #define BUILTIN_TYPE_NUM 8
 
+// Generation
+#define MAX_ASM_LINE_SIZE 128
+
 #endif // !CONFIG_H
 

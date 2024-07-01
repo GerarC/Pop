@@ -2,6 +2,7 @@
 
 #define EXPR_H
 #include "token.h"
+#include "typedef.h"
 #include "config.h"
 
 typedef struct _node_t Node;
@@ -32,8 +33,8 @@ typedef struct _node_t {
  * */
 typedef struct _parser_t {
 	Token *tokens;
-	int length;
-	int pos;
+	size length;
+	size pos;
 } Parser;
 
 /* Receives a token list (returned in the lexing step) and its size, will be

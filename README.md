@@ -71,7 +71,7 @@ and I know that center of deploy to windows will make me have headaches.
 
 ## Milestones
 
-- [ ] Compiled to native instructions
+- [x] Compiled to native instructions
 - [ ] Variables
 - [ ] Arrays
 - [ ] Chars
@@ -96,6 +96,7 @@ These are some of the resources I used:
 - [Semantic Analysis](https://www.youtube.com/watch?v=cC8YRnDGMwI&ab_channel=Dr.SagarkumarBadhiye)
 - [Another example of compiler](https://www.youtube.com/watch?v=-4RmhDy0A2s&list=PLRnI_2_ZWhtA_ZAzEa8uJF8wgGF0HjjEz&ab_channel=CobbCoding)
 - [Intermediate Representation](https://www.youtube.com/watch?v=u2qLQep_Wzw&ab_channel=AnitaR)
+- [Compiler in C of DoctorWkt](https://github.com/DoctorWkt/acwj)
 
 ## Thanks
 
@@ -109,3 +110,6 @@ These are some of the resources I used:
 - **AnitaR:**
   Oh thanks god to have found her video explaining three address code. Literally i had no idea how to implement that and
   it was just watch that video to shine my mind into something functional. I love U Anita.
+
+- **DoctorWkt:** Thanks to show me `r8`, `r9`, `r10` and `r11` registers. I was having a lot of problems using `R*X`'s type ones.
+Also thanks for your register managing way, I thought it before seen your way, but I really chose it because of your code. 

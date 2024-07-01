@@ -13,7 +13,7 @@ void unitary_ir(IntermediateRepresentation *ir, Node *unit);
 IrValue literal_val(IntermediateRepresentation *ir, Node *lit);
 
 char *irval_string(IrValue value) {
-	char * string_val = (char*) malloc(sizeof(char)*10);
+	char *string_val = (char *)malloc(sizeof(char) * 10);
 	switch (value.type) {
 		case IRVAL_INT:
 			snprintf(string_val, 10, "%i", value.data.ival);
@@ -21,52 +21,52 @@ char *irval_string(IrValue value) {
 		case IRVAL_FLOAT:
 			snprintf(string_val, 10, "%.2f", value.data.fval);
 			break;
-		case IRVAL_INDEX:
-			snprintf(string_val, 10, "(%i)", value.data.index);
+		case IRVAL_ADDRESS:
+			snprintf(string_val, 10, "t%u", value.data.index);
 			break;
 	}
-    return string_val;
+	return string_val;
 }
 
 void print_ir(IntermediateRepresentation *ir) {
 	if (LOG_DEBUG > LOG_LEVEL) return;
-	log_debug("Printing Ir");
+	log_debug("Printing IR");
 
-	for (int i = 0; i < ir->count; i++) {
+	for (size i = 0; i < ir->count; i++) {
 		IrOperationType type = ir->instructions[i].type;
-        char* arg1 = irval_string(ir->instructions[i].arg1);
-        char* arg2 = irval_string(ir->instructions[i].arg2);
+		char *arg1 = irval_string(ir->instructions[i].arg1);
+		char *arg2 = irval_string(ir->instructions[i].arg2);
+		char *result = irval_string(ir->instructions[i].result);
 		char operation[5];
 
-        printf("(%i):\t", i);
 		switch (type) {
 			case IR_ADD:
-				strcpy(operation, "add");
-				printf("%s %s, %s", operation, arg1, arg2);
+				strcpy(operation, "+");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_SUB:
-				strcpy(operation, "sub");
-				printf("%s %s, %s", operation, arg1, arg2);
+				strcpy(operation, "-");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_MUL:
-				strcpy(operation, "mul");
-				printf("%s %s, %s", operation, arg1, arg2);
+				strcpy(operation, "*");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_DIV:
-				strcpy(operation, "div");
-				printf("%s %s, %s", operation, arg1, arg2);
+				strcpy(operation, "/");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			default:
-				log_error("Op %i not implemented print", type);
+				log_error("Op %i not implemented", type);
 		}
-        free(arg1);
-        free(arg2);
+		free(arg1);
+		free(arg2);
 		printf("\n");
 	}
+	printf("\n");
 }
 
 int is_literal(Node *lit) {
-	log_debug("is %s literal?", lit->token.lexeme);
 	switch (lit->token.type) {
 		case TOK_SYMBOL:
 		case TOK_INT:
@@ -92,9 +92,7 @@ void add_iroperation(IntermediateRepresentation *ir, IrOperation op) {
 	ir->instructions[ir->count].type = op.type;
 	ir->instructions[ir->count].arg1 = op.arg1;
 	ir->instructions[ir->count].arg2 = op.arg2;
-
-	/*ir->intructions[ir->count].arg3 = op.arg3;*/
-	/*ir->intructions[ir->count].result = op.result;*/
+	ir->instructions[ir->count].result = op.result;
 
 	ir->count++;
 }
@@ -121,7 +119,7 @@ IntermediateRepresentation *create_intermediate_representation(Node *ast) {
 void program_ir(IntermediateRepresentation *ir, Node *program) {
 	log_warn("PROGRAM IR NOT IMPLEMENTED");
 	if (program->token.type != TOK_MAIN) ir_error("Not entry point", program);
-	for (int i = 0; i < program->child_count; i++) {
+	for (size i = 0; i < program->child_count; i++) {
 		statement_ir(ir, program->children[i]);
 	}
 }
@@ -204,7 +202,6 @@ void expression_ir(IntermediateRepresentation *ir, Node *expr) {
 
 void binaryop_ir(IntermediateRepresentation *ir, Node *bin) {
 	IrOperationType op_type;
-	log_debug("binary op %s", bin->token.lexeme);
 	switch (bin->token.type) {
 		case TOK_PLUS:
 			op_type = IR_ADD;
@@ -214,11 +211,11 @@ void binaryop_ir(IntermediateRepresentation *ir, Node *bin) {
 			op_type = IR_SUB;
 			break;
 
-		case TOK_SLASH:
+		case TOK_STAR:
 			op_type = IR_MUL;
 			break;
 
-		case TOK_STAR:
+		case TOK_SLASH:
 			op_type = IR_DIV;
 			break;
 
@@ -234,7 +231,7 @@ void binaryop_ir(IntermediateRepresentation *ir, Node *bin) {
 			arg1 = literal_val(ir, bin->left);
 		} else {
 			expression_ir(ir, bin->left);
-			arg1.type = IRVAL_INDEX;
+			arg1.type = IRVAL_ADDRESS;
 			arg1.data.index = ir->count - 1;
 		}
 	}
@@ -244,12 +241,14 @@ void binaryop_ir(IntermediateRepresentation *ir, Node *bin) {
 			arg2 = literal_val(ir, bin->right);
 		} else {
 			expression_ir(ir, bin->right);
-			arg2.type = IRVAL_INDEX;
+			arg2.type = IRVAL_ADDRESS;
 			arg2.data.index = ir->count - 1;
 		}
 	}
+	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
 
-	IrOperation op = {.type = op_type, .arg1 = arg1, .arg2 = arg2};
+	IrOperation op = {
+		.type = op_type, .arg1 = arg1, .arg2 = arg2, .result = result};
 
 	add_iroperation(ir, op);
 }

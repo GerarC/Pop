@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "./config.h"
+#include "config.h"
 
 /* Enum with all the kinds of tokens
  * */
