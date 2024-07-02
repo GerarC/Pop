@@ -53,6 +53,7 @@ void generate_header(Assembler *code) {
 				   "\n;  ---------- Initializate program ----------\n"
 				   "section .text\n"
 				   "\tglobal _start\n"
+
 				   // Temporal print
 				   "print:\n"
 				   "\tmov\tr9, -3689348814741910323\n"
@@ -87,6 +88,7 @@ void generate_header(Assembler *code) {
 				   "\tsyscall\n"
 				   "\tadd     rsp, 40\n"
 				   "\tret\n\n"
+
 				   // Program
 				   "_start:\n"
 				   "\tpush\trbp\n"
@@ -152,7 +154,6 @@ void move_reg(Assembler *code, int r1, int r2) {
 }
 
 int gen_add(Assembler *code, int r1, int r2) {
-	add_line(code, "\t;  ---- ADD ----\n");
 	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tadd\t%s, %s\n", registers[r1],
 			 registers[r2]);
 	add_line(code, asm_line);
@@ -161,7 +162,6 @@ int gen_add(Assembler *code, int r1, int r2) {
 }
 
 int gen_sub(Assembler *code, int r1, int r2) {
-	add_line(code, "\t;  ---- SUB ----\n");
 	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tsub\t%s, %s\n", registers[r1],
 			 registers[r2]);
 	add_line(code, asm_line);
@@ -170,7 +170,6 @@ int gen_sub(Assembler *code, int r1, int r2) {
 }
 
 int gen_mul(Assembler *code, int r1, int r2) {
-	add_line(code, "\t;  ---- MUL ----\n");
 	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\timul\t%s, %s\n", registers[r1],
 			 registers[r2]);
 	add_line(code, asm_line);
@@ -179,22 +178,138 @@ int gen_mul(Assembler *code, int r1, int r2) {
 }
 
 int gen_div(Assembler *code, int r1, int r2) {
-	add_line(code, "\t;  ---- DIV ----\n");
-
-	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tmov\trax, %s\n", registers[r1]);
-	add_line(code, asm_line);
-
 	snprintf(asm_line, MAX_ASM_LINE_SIZE,
+			 "\tmov\trax, %s\n"
 			 "\tcqo\n"
-			 "\tidiv\t%s\n",
-			 registers[r2]);
-	add_line(code, asm_line);
-
-	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tmov\t%s, rax\n", registers[r1]);
+			 "\tidiv\t%s\n"
+			 "\tmov\t%s, rax\n",
+			 registers[r1], registers[r2], registers[r1]);
 	add_line(code, asm_line);
 
 	deallocate_register(r2);
 	return r1;
+}
+
+int gen_comparison(Assembler *code, int r1, int r2, IrOperationType type) {
+	if (type != IR_DIFF)
+		snprintf(asm_line, MAX_ASM_LINE_SIZE,
+				 "\tmov\trcx, 0\n"
+				 "\tmov\trdx, 1\n"
+				 "\tcmp\t%s, %s\n",
+				 registers[r1], registers[r2]);
+	else
+		snprintf(asm_line, MAX_ASM_LINE_SIZE,
+				 "\tmov\trcx, 1\n"
+				 "\tmov\trdx, 0\n"
+				 "\tcmp\t%s, %s\n",
+				 registers[r1], registers[r2]);
+	add_line(code, asm_line);
+
+	switch (type) {
+		case IR_EQUAL:
+		case IR_DIFF:
+			snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcmove\trcx, rdx\n");
+			break;
+		case IR_GT:
+			snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcmovg\trcx, rdx\n");
+			break;
+		case IR_GEQT:
+			snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcmovge\trcx, rdx\n");
+			break;
+		case IR_LT:
+			snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcmovl\trcx, rdx\n");
+			break;
+		case IR_LEQT:
+			snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcmovle\trcx, rdx\n");
+			break;
+
+		default:
+			log_fatal("%i COMPARISON NOT IMPLEMENTED", type);
+			exit(1);
+			break;
+	}
+	add_line(code, asm_line);
+
+	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tmov\t%s, rcx\n", registers[r1]);
+	add_line(code, asm_line);
+
+	deallocate_register(r2);
+	return r1;
+}
+
+void generate_binaryop(Assembler *code, IntermediateRepresentation *ir,
+					   int index) {
+	IrOperation op = ir->instructions[index];
+	int arg1 = load_value(code, ir, op.arg1);
+	int arg2 = load_value(code, ir, op.arg2);
+	switch (op.type) {
+		case IR_ADD:
+			ir->instructions[index].result.data.index =
+				gen_add(code, arg1, arg2);
+			break;
+		case IR_SUB:
+			ir->instructions[index].result.data.index =
+				gen_sub(code, arg1, arg2);
+			break;
+		case IR_MUL:
+			ir->instructions[index].result.data.index =
+				gen_mul(code, arg1, arg2);
+			break;
+		case IR_DIV:
+			ir->instructions[index].result.data.index =
+				gen_div(code, arg1, arg2);
+			break;
+
+		case IR_EQUAL:
+		case IR_DIFF:
+		case IR_GT:
+		case IR_GEQT:
+		case IR_LT:
+		case IR_LEQT:
+			ir->instructions[index].result.data.index =
+				gen_comparison(code, arg1, arg2, op.type);
+			break;
+
+		default:
+			log_fatal("%i OP NOT IMPLEMENTED", op.type);
+			exit(1);
+			break;
+	}
+}
+
+int gen_bin_not(Assembler *code, int r1) {
+	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tNOT %s\n", registers[r1]);
+	add_line(code, asm_line);
+	return r1;
+}
+
+int gen_uminus(Assembler *code, int r1) {
+	snprintf(asm_line, MAX_ASM_LINE_SIZE,
+			 "\tNOT %s\n"
+			 "\tinc\t%s\n",
+			 registers[r1], registers[r1]);
+	add_line(code, asm_line);
+
+	return r1;
+}
+
+void generate_unitaryop(Assembler *code, IntermediateRepresentation *ir,
+						int index) {
+	IrOperation op = ir->instructions[index];
+	int arg1 = load_value(code, ir, op.arg1);
+	switch (op.type) {
+		case IR_UMINUS:
+			ir->instructions[index].result.data.index = gen_uminus(code, arg1);
+			break;
+		case IR_BINNOT:
+			ir->instructions[index].result.data.index = gen_bin_not(code, arg1);
+			break;
+
+		default:
+			log_fatal("%i OP NOT IMPLEMENTED", op.type);
+			exit(1);
+			break;
+	}
 }
 
 void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
@@ -202,32 +317,25 @@ void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
 	size i;
 	for (i = 0; i < ir->count; i++) {
 		IrOperation op = ir->instructions[i];
-		char asm_line[MAX_ASM_LINE_SIZE];
 		int arg1, arg2;
 		switch (op.type) {
+			case IR_EQUAL:
+			case IR_DIFF:
+			case IR_GT:
+			case IR_GEQT:
+			case IR_LT:
+			case IR_LEQT:
+
 			case IR_ADD:
-				arg1 = load_value(code, ir, op.arg1);
-				arg2 = load_value(code, ir, op.arg2);
-				ir->instructions[i].result.data.index =
-					gen_add(code, arg1, arg2);
-				break;
 			case IR_SUB:
-				arg1 = load_value(code, ir, op.arg1);
-				arg2 = load_value(code, ir, op.arg2);
-				ir->instructions[i].result.data.index =
-					gen_sub(code, arg1, arg2);
-				break;
 			case IR_MUL:
-				arg1 = load_value(code, ir, op.arg1);
-				arg2 = load_value(code, ir, op.arg2);
-				ir->instructions[i].result.data.index =
-					gen_mul(code, arg1, arg2);
-				break;
 			case IR_DIV:
-				arg1 = load_value(code, ir, op.arg1);
-				arg2 = load_value(code, ir, op.arg2);
-				ir->instructions[i].result.data.index =
-					gen_div(code, arg1, arg2);
+				generate_binaryop(code, ir, i);
+				break;
+			case IR_UMINUS:
+			case IR_NOT:
+			case IR_BINNOT:
+				generate_unitaryop(code, ir, i);
 				break;
 
 			default:

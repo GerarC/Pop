@@ -40,6 +40,7 @@ typedef enum _token_type_e {
 	TOK_SLASH,	// /
 	TOK_STAR,	// * and pointers
 	TOK_MOD,	// %
+	TOK_BINNOT,	   // ! not
 	TOK_BINOR,	//  |
 	TOK_BINAND, // &
 	TOK_BINXOR, // ^

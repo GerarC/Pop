@@ -8,6 +8,7 @@
 static Scope *scope;
 const char *compare_types(Node *a, Node *b);
 void statement_analysis(Node *stmt);
+void if_while_analysis(Node *ifwh);
 void expression_analysis(Node *expr);
 void binaryop_analysis(Node *binary);
 void unitary_analysis(Node *unit);
@@ -30,7 +31,7 @@ void typing_error(char *message, Node *a, Node *b) {
 }
 
 void semantic_analysis(Node *ast) {
-    log_info("Semantic Analysis starts");
+	log_info("Semantic Analysis starts");
 	scope = create_global_scope();
 
 	if (ast->token.type == TOK_MAIN)
@@ -40,7 +41,7 @@ void semantic_analysis(Node *ast) {
 	else semantic_error("There is not entry point", ast);
 
 	exit_scope(scope);
-    log_info("Semantic Analysis ends");
+	log_info("Semantic Analysis ends");
 }
 
 const char *compare_types(Node *a, Node *b) {
@@ -86,13 +87,30 @@ void statement_analysis(Node *stmt) {
 		case TOK_BINOR:
 		case TOK_BINAND:
 		case TOK_BINXOR:
+		case TOK_BINNOT:
 			expression_analysis(stmt);
+			break;
+
+		case TOK_IF:
+			if_while_analysis(stmt);
 			break;
 
 		default:
 			semantic_error("Ilegal Token", stmt);
 			break;
 	}
+}
+
+void if_while_analysis(Node *ifwh) {
+	scope = enter_scope(scope);
+	Token tok = ifwh->token;
+	if (tok.type == TOK_IF) {
+		expression_analysis(ifwh->children[0]);
+		for (int i = 1; i < ifwh->child_count; i++)
+			statement_analysis(ifwh->children[i]);
+	}
+
+	scope = exit_scope(scope);
 }
 
 void expression_analysis(Node *expr) {
@@ -112,6 +130,7 @@ void expression_analysis(Node *expr) {
 			break;
 
 		case TOK_NOT:
+		case TOK_BINNOT:
 			unitary_analysis(expr);
 			break;
 

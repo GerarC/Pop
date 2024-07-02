@@ -68,11 +68,12 @@ int main(int argc, char **argv) {
 			create_intermediate_representation(ast);
 		print_ir(ir);
 
-		Assembler code = create_assembler();
+		/*Assembler code = create_assembler();*/
+		/*generate_nasm_x86_64(&code, ir);*/
+		/*write_file(output_file, &code);*/
+		/*      free_assembler(code);*/
 
-		generate_nasm_x86_64(&code, ir);
-		write_file(output_file, &code);
-
+        free_intermediate_representation(ir);
 		free_lexer(tokens, lexer_len);
 		log_info("free ast");
 		free_ast(ast);

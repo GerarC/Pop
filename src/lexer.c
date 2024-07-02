@@ -184,6 +184,19 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			create_token(&(tokens[token_count - 1]), tok_type, loc,
 						 curr - start, lexeme, NULL);
 
+		} else if (*curr == '~') {
+			tok_type = TOK_BINNOT;
+			curr++;
+			col++;
+
+			int len = curr - start;
+			char *lex = (char *)malloc(sizeof(char) * len + 1);
+			strncpy(lex, start, len);
+			lex[len] = '\0';
+
+			create_token(&(tokens[token_count - 1]), tok_type, loc,
+						 curr - start, lex, NULL);
+
 		} else if (*curr == '=') {
 		lex_program_eq:
 			if (tok_type == TOK_PLUS) tok_type = TOK_PLUS_EQUAL;

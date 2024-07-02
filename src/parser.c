@@ -26,8 +26,12 @@ void parser_error(char *message, Token tok);
 /* ### Grammar
  * Program -> statement*
  * statement -> expr tok_eln
+ *            | 'if' '('expr')' '{'statement+'}' else_stmt tok_eln
+ *            | 'if' '('expr')' statement+ tok_eln
  *            | assign tok_eln
  *            | declaration tok_eln
+ * else_expr -> else '{'statement+'}' tok_eln
+ *            | else statement tok_eln
  * expr -> equality
  * equality -> comparison (('=='|'!=') comparison)*
  * comparison -> term (('<'|'>'|'<='|'>='|'=='|'!=') term)*
@@ -44,6 +48,9 @@ void parser_error(char *message, Token tok);
 //----------------- Implementation ---------------- //
 //
 Node *parse_statement(Parser *parser);
+
+Node *parse_if(Parser *parser);
+
 Node *parse_expression(Parser *parser);
 Node *parse_equality(Parser *parser);
 Node *parse_comparison(Parser *parser);
@@ -116,7 +123,6 @@ Node *parse_program(Parser *parser) {
 			children[statements->child_count - 1] = current;
 		} else {
 			parser_error("Something wrong happened", statements->token);
-			return NULL;
 		}
 	}
 	statements->children = children;
@@ -128,11 +134,61 @@ Node *parse_statement(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *stmt = NULL;
 	if (tok.type == TOK_LET) stmt = parse_literal(parser);
+	else if (tok.type == TOK_IF) stmt = parse_if(parser);
 	else { stmt = parse_expression(parser); }
 
 	if (current_token(parser).type == TOK_ELN) next(parser);
 
 	return stmt;
+}
+
+Node *parse_if(Parser *parser) {
+	Token tok = current_token(parser);
+	Node *if_stmt = NULL;
+	Node *current = NULL;
+	Node **children = NULL;
+	next(parser);
+	if (current_token(parser).type == TOK_LPAREN) {
+		next(parser);
+		if_stmt = create_mulnode(tok, 0, NULL);
+		current = parse_equality(parser);
+
+		if (current_token(parser).type == TOK_RPAREN) next(parser);
+		else parser_error("A ')' expected", current_token(parser));
+
+		children = (Node **)malloc(sizeof(Node *));
+		if_stmt->child_count++;
+		children[if_stmt->child_count - 1] = current;
+
+		if (current_token(parser).type == TOK_LCURLY) {
+			next(parser);
+			if (current_token(parser).type == TOK_ELN) next(parser);
+			while (parser->pos < parser->length &&
+				   current_token(parser).type != TOK_RCURLY) {
+				current = parse_statement(parser);
+				if (current != NULL) {
+					if_stmt->child_count++;
+					children = (Node **)realloc(
+						children, sizeof(Node *) * if_stmt->child_count);
+					children[if_stmt->child_count - 1] = current;
+				} else parser_error("Something wrong happened", if_stmt->token);
+			}
+
+			if (current_token(parser).type == TOK_RCURLY) next(parser);
+			else parser_error("A '}' expected", current_token(parser));
+
+		} else {
+			current = parse_statement(parser);
+			if (current != NULL) {
+				if_stmt->child_count++;
+				children = (Node **)realloc(children, sizeof(Node *) *
+														  if_stmt->child_count);
+				children[if_stmt->child_count - 1] = current;
+			} else parser_error("Something wrong happened", if_stmt->token);
+		}
+		if_stmt->children = children;
+	}
+	return if_stmt;
 }
 
 Node *parse_expression(Parser *parser) { return parse_equality(parser); }
@@ -201,11 +257,12 @@ Node *parse_factor(Parser *parser) {
 Node *parse_unary(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *unary = NULL;
-	if (tok.type == TOK_MINUS || tok.type == TOK_NOT) {
+	if (tok.type == TOK_MINUS || tok.type == TOK_NOT ||
+		tok.type == TOK_BINNOT) {
 		next(parser);
 		unary = create_mulnode(tok, 1, NULL);
 		unary->children = (Node **)malloc(sizeof(Node *));
-		unary->children[0] = parse_literal(parser);
+		unary->children[0] = parse_expression(parser);
 	} else {
 		return parse_literal(parser);
 	}

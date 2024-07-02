@@ -7,8 +7,10 @@
 void program_ir(IntermediateRepresentation *ir, Node *program);
 void statement_ir(IntermediateRepresentation *ir, Node *stmt);
 void expression_ir(IntermediateRepresentation *ir, Node *expr);
+void if_ir(IntermediateRepresentation *ir, Node *expr);
 void binaryop_ir(IntermediateRepresentation *ir, Node *bin);
 void unitary_ir(IntermediateRepresentation *ir, Node *unit);
+void cross_reference_builder(IntermediateRepresentation *ir);
 /*void literal_ir(IntermediateRepresentation *ir, Node *lit);*/
 IrValue literal_val(IntermediateRepresentation *ir, Node *lit);
 
@@ -56,6 +58,54 @@ void print_ir(IntermediateRepresentation *ir) {
 				strcpy(operation, "/");
 				printf("%s = %s %s %s", result, arg1, operation, arg2);
 				break;
+
+			case IR_EQUAL:
+				strcpy(operation, "==");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				break;
+			case IR_DIFF:
+				strcpy(operation, "!=");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				break;
+			case IR_GT:
+				strcpy(operation, ">");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				break;
+			case IR_GEQT:
+				strcpy(operation, ">=");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				break;
+			case IR_LT:
+				strcpy(operation, "<");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				break;
+			case IR_LEQT:
+				strcpy(operation, "<=");
+				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				break;
+
+			case IR_UMINUS:
+				strcpy(operation, "-");
+				printf("%s = %s %s", result, operation, arg1);
+				break;
+			case IR_NOT:
+				strcpy(operation, "not");
+				printf("%s = %s %s", result, operation, arg1);
+				break;
+			case IR_BINNOT:
+				strcpy(operation, "~");
+				printf("%s = %s %s", result, operation, arg1);
+				break;
+
+			case IR_IF:
+				strcpy(operation, "if");
+				printf("%s !%s goto endblock_%s", operation, arg1, result);
+				break;
+
+			case IR_ENDBLOCK:
+				printf("endblock_%s:", result);
+				break;
+
 			default:
 				log_error("Op %i not implemented", type);
 		}
@@ -63,7 +113,7 @@ void print_ir(IntermediateRepresentation *ir) {
 		free(arg2);
 		printf("\n");
 	}
-	printf("\n");
+	printf("end\n\n");
 }
 
 int is_literal(Node *lit) {
@@ -113,6 +163,7 @@ IntermediateRepresentation *create_intermediate_representation(Node *ast) {
 
 	program_ir(ir, ast);
 
+	cross_reference_builder(ir);
 	return ir;
 }
 
@@ -154,13 +205,55 @@ void statement_ir(IntermediateRepresentation *ir, Node *stmt) {
 		case TOK_BINOR:
 		case TOK_BINAND:
 		case TOK_BINXOR:
+		case TOK_BINNOT:
 			expression_ir(ir, stmt);
+			break;
+
+		case TOK_IF:
+			if_ir(ir, stmt);
 			break;
 
 		default:
 			ir_error("Not implemented", stmt);
 			break;
 	}
+}
+
+void if_ir(IntermediateRepresentation *ir, Node *if_stmt) {
+	IrValue arg1 = {0};
+
+	if (if_stmt->children[0]) {
+		if (is_literal(if_stmt->children[0])) {
+			arg1 = literal_val(ir, if_stmt->children[0]);
+		} else {
+			expression_ir(ir, if_stmt->children[0]);
+			arg1.type = IRVAL_ADDRESS;
+			arg1.data.index = ir->count - 1;
+		}
+	}
+
+	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
+
+	IrOperation op = {.type = IR_IF, .arg1 = arg1, .result = result};
+
+	add_iroperation(ir, op);
+	int limit =
+		if_stmt->children[if_stmt->child_count - 1]->token.type == TOK_ELSE
+			? if_stmt->child_count - 1
+			: if_stmt->child_count;
+
+	for (size i = 1; i < limit; i++) {
+		statement_ir(ir, if_stmt->children[i]);
+	}
+
+	if (limit < if_stmt->child_count)
+		log_warn("ELSE INTERMEDIARY REPRESENTATION NOT IMPLEMENTED");
+
+	result.data.index = ir->count;
+
+	IrOperation end_lbl = {.type = IR_ENDBLOCK, .result = result};
+
+	add_iroperation(ir, end_lbl);
 }
 
 void expression_ir(IntermediateRepresentation *ir, Node *expr) {
@@ -182,6 +275,7 @@ void expression_ir(IntermediateRepresentation *ir, Node *expr) {
 			break;
 
 		case TOK_NOT:
+		case TOK_BINNOT:
 			unitary_ir(ir, expr);
 			break;
 
@@ -206,17 +300,32 @@ void binaryop_ir(IntermediateRepresentation *ir, Node *bin) {
 		case TOK_PLUS:
 			op_type = IR_ADD;
 			break;
-
 		case TOK_MINUS:
 			op_type = IR_SUB;
 			break;
-
 		case TOK_STAR:
 			op_type = IR_MUL;
 			break;
-
 		case TOK_SLASH:
 			op_type = IR_DIV;
+			break;
+		case TOK_EQUAL:
+			op_type = IR_EQUAL;
+			break;
+		case TOK_DIFF:
+			op_type = IR_DIFF;
+			break;
+		case TOK_GT:
+			op_type = IR_GT;
+			break;
+		case TOK_GEQT:
+			op_type = IR_GEQT;
+			break;
+		case TOK_LT:
+			op_type = IR_LT;
+			break;
+		case TOK_LEQT:
+			op_type = IR_LEQT;
 			break;
 
 		default:
@@ -254,7 +363,38 @@ void binaryop_ir(IntermediateRepresentation *ir, Node *bin) {
 }
 
 void unitary_ir(IntermediateRepresentation *ir, Node *unit) {
-	log_warn("UNITARY OP IR NOT IMPLEMENTED");
+	IrOperationType op_type;
+	switch (unit->token.type) {
+		case TOK_MINUS:
+			op_type = IR_UMINUS;
+			break;
+
+		case TOK_NOT:
+			op_type = IR_NOT;
+			break;
+
+		case TOK_BINNOT:
+			op_type = IR_BINNOT;
+			break;
+
+		default:
+			ir_error("NOT REACHABLE UNITARY OPERATION", unit);
+			break;
+	}
+	IrValue arg1 = {0};
+	if (is_literal(unit->children[0]))
+		arg1 = literal_val(ir, unit->children[0]);
+	else {
+		expression_ir(ir, unit->children[0]);
+		arg1.type = IRVAL_ADDRESS;
+		arg1.data.index = ir->count - 1;
+	}
+	int res_addr = arg1.type == IRVAL_ADDRESS ? arg1.data.index : ir->count;
+
+	IrValue result = {.type = IRVAL_ADDRESS, .data.index = res_addr};
+	IrOperation op = {.type = op_type, .arg1 = arg1, .result = result};
+
+	add_iroperation(ir, op);
 }
 
 IrValue literal_val(IntermediateRepresentation *ir, Node *lit) {
@@ -280,4 +420,29 @@ IrValue literal_val(IntermediateRepresentation *ir, Node *lit) {
 
 void free_intermediate_representation(IntermediateRepresentation *ir) {
 	log_warn("FREE INTERMEDIARY REPRESENTATION NOT IMPLEMENTED");
+}
+
+void cross_reference_builder(IntermediateRepresentation *ir) {
+	log_info("enter to cross reference");
+	int stack[MAX_STACK_SIZE];
+	int sp = 0;
+	for (size i = 0; i < ir->count; i++) {
+		IrOperation op = ir->instructions[i];
+		if (op.type == IR_IF) {
+			log_info("enter to if stack");
+			stack[sp] = i;
+			sp++;
+		} else if (op.type == IR_ENDBLOCK) {
+			size index = stack[--sp];
+			if (ir->instructions[index].type == IR_IF) {
+				ir->instructions[index].result.data.index = i;
+			}
+			log_info("outs to end stack");
+		}
+	}
+	log_info("outs to cross reference");
+	if (sp != 0) {
+		log_fatal("NOT ALL BLOCK ARE CLOSED");
+		exit(1);
+	}
 }

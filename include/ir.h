@@ -2,13 +2,29 @@
 #define INTERMEDIARY_REPRESENTATION_H
 
 #include "parser.h"
+#include "config.h"
 
 typedef enum {
-    IR_VALUE,
 	IR_ADD,
 	IR_SUB,
 	IR_MUL,
 	IR_DIV,
+	IR_UMINUS,
+
+	IR_LT,
+	IR_LEQT,
+	IR_GT,
+	IR_GEQT,
+	IR_EQUAL,
+	IR_DIFF,
+
+	IR_NOT,
+	IR_IF,
+	IR_ELSE,
+
+	IR_BINNOT,
+
+	IR_ENDBLOCK,
 } IrOperationType;
 
 typedef enum {
