@@ -49,6 +49,17 @@ By the moment the steps I've followed to reach the compiler has been:
    ```
 
    these `arg1` and `arg2` can be a number or the index into another Operation, this is to connect easily when the IR transforms into assembly.
+   The idea is to create a table-like Three Address Code representation where the indexes says where do you saves things.
+   For example, `(2*3 + 1) - (4*5 / 6*7)` is represented by the next table:
+
+   | Index | Op  | Arg1 | Arg2 |
+   | ----: | :-: | :--: | :--: |
+   |     0 | \*  |  2   |  3   |
+   |     1 |  +  |  1   | (0)  |
+   |     2 | \*  |  4   |  5   |
+   |     3 |  +  |  6   |  7   |
+   |     4 |  /  | (2)  | (3)  |
+   |     5 |  -  | (1)  | (4)  |
 
 ## Compile
 
@@ -112,4 +123,4 @@ These are some of the resources I used:
   it was just watch that video to shine my mind into something functional. I love U Anita.
 
 - **DoctorWkt:** Thanks to show me `r8`, `r9`, `r10` and `r11` registers. I was having a lot of problems using `R*X`'s type ones.
-Also thanks for your register managing way, I thought it before seen your way, but I really chose it because of your code. 
+  Also thanks for your register managing way, I thought it before seen your way, but I really chose it because of your code.

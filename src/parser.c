@@ -49,7 +49,10 @@ void parser_error(char *message, Token tok);
 //
 Node *parse_statement(Parser *parser);
 
+void get_block_statements(Parser *parser, int *child_count, Node ***child);
 Node *parse_if(Parser *parser);
+Node *parse_else(Parser *parser);
+Node *parse_while(Parser *parser);
 
 Node *parse_expression(Parser *parser);
 Node *parse_equality(Parser *parser);
@@ -58,6 +61,8 @@ Node *parse_term(Parser *parser);
 Node *parse_factor(Parser *parser);
 Node *parse_unary(Parser *parser);
 Node *parse_literal(Parser *parser);
+
+Node *parse_temp_print_int(Parser *parser);
 
 Parser create_parser(Token *tokens, int length) {
 	Parser parser = {tokens, length, 0};
@@ -133,13 +138,50 @@ Node *parse_program(Parser *parser) {
 Node *parse_statement(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *stmt = NULL;
+    log_error("%s", token_string(tok));
 	if (tok.type == TOK_LET) stmt = parse_literal(parser);
 	else if (tok.type == TOK_IF) stmt = parse_if(parser);
+	else if (tok.type == TOK_ELSE) stmt = parse_else(parser);
+	else if (tok.type == TOK_PRINT_INT) stmt = parse_temp_print_int(parser);
 	else { stmt = parse_expression(parser); }
 
 	if (current_token(parser).type == TOK_ELN) next(parser);
 
 	return stmt;
+}
+
+void get_block_statements(Parser *parser, int *child_count, Node ***child) {
+	Node *current = NULL;
+	int count = *child_count;
+	Node **children = *child;
+	if (current_token(parser).type == TOK_LCURLY) {
+		next(parser);
+		if (current_token(parser).type == TOK_ELN) next(parser);
+		while (parser->pos < parser->length &&
+			   current_token(parser).type != TOK_RCURLY) {
+			current = parse_statement(parser);
+			if (current != NULL) {
+				(count)++;
+				children = (Node **)realloc(children, sizeof(Node *) * (count));
+				children[count - 1] = current;
+			} else
+				parser_error("Something wrong happened", current_token(parser));
+		}
+
+		if (current_token(parser).type == TOK_RCURLY) next(parser);
+		else parser_error("A '}' expected", current_token(parser));
+
+	} else {
+		if (current_token(parser).type == TOK_ELN) next(parser);
+		current = parse_statement(parser);
+		if (current != NULL) {
+			(count)++;
+			children = (Node **)realloc(children, sizeof(Node *) * (count));
+			children[count - 1] = current;
+		} else parser_error("Something wrong happened", current_token(parser));
+	}
+	*child_count = count;
+	*child = children;
 }
 
 Node *parse_if(Parser *parser) {
@@ -151,7 +193,7 @@ Node *parse_if(Parser *parser) {
 	if (current_token(parser).type == TOK_LPAREN) {
 		next(parser);
 		if_stmt = create_mulnode(tok, 0, NULL);
-		current = parse_equality(parser);
+		current = parse_expression(parser);
 
 		if (current_token(parser).type == TOK_RPAREN) next(parser);
 		else parser_error("A ')' expected", current_token(parser));
@@ -159,36 +201,40 @@ Node *parse_if(Parser *parser) {
 		children = (Node **)malloc(sizeof(Node *));
 		if_stmt->child_count++;
 		children[if_stmt->child_count - 1] = current;
-
-		if (current_token(parser).type == TOK_LCURLY) {
-			next(parser);
-			if (current_token(parser).type == TOK_ELN) next(parser);
-			while (parser->pos < parser->length &&
-				   current_token(parser).type != TOK_RCURLY) {
-				current = parse_statement(parser);
-				if (current != NULL) {
-					if_stmt->child_count++;
-					children = (Node **)realloc(
-						children, sizeof(Node *) * if_stmt->child_count);
-					children[if_stmt->child_count - 1] = current;
-				} else parser_error("Something wrong happened", if_stmt->token);
-			}
-
-			if (current_token(parser).type == TOK_RCURLY) next(parser);
-			else parser_error("A '}' expected", current_token(parser));
-
-		} else {
-			current = parse_statement(parser);
-			if (current != NULL) {
-				if_stmt->child_count++;
-				children = (Node **)realloc(children, sizeof(Node *) *
-														  if_stmt->child_count);
-				children[if_stmt->child_count - 1] = current;
-			} else parser_error("Something wrong happened", if_stmt->token);
-		}
-		if_stmt->children = children;
 	}
+
+	int count = if_stmt->child_count;
+	get_block_statements(parser, &count, &children);
+	if_stmt->child_count = count;
+
+	/*if (current_token(parser).type == TOK_ELSE) {*/
+	/*	if_stmt->child_count++;*/
+	/*	children =*/
+	/*		(Node **)realloc(children, sizeof(Node *) * if_stmt->child_count);*/
+	/*	children[if_stmt->child_count - 1] = parse_else(parser);*/
+	/*}*/
+
+	if_stmt->children = children;
+
 	return if_stmt;
+}
+
+Node *parse_else(Parser *parser) {
+	Token tok = current_token(parser);
+	Node *else_stmt = NULL;
+	Node **children = NULL;
+
+	else_stmt = create_mulnode(tok, 0, NULL);
+	children = (Node **)malloc(sizeof(Node *));
+	int count = else_stmt->child_count;
+
+	next(parser);
+	get_block_statements(parser, &count, &children);
+
+	else_stmt->child_count = count;
+	else_stmt->children = children;
+
+	return else_stmt;
 }
 
 Node *parse_expression(Parser *parser) { return parse_equality(parser); }
@@ -335,4 +381,27 @@ void free_ast(Node *root) {
 		}
 
 	free(root);
+}
+
+Node *parse_temp_print_int(Parser *parser){
+    log_warn("This is a temporal function, must and is going to be deleted");
+	Token tok = current_token(parser);
+	Node *print_stmt = NULL;
+	Node *current = NULL;
+	Node **children = NULL;
+	next(parser);
+	if (current_token(parser).type == TOK_LPAREN) {
+		next(parser);
+		print_stmt = create_mulnode(tok, 0, NULL);
+		current = parse_expression(parser);
+
+		if (current_token(parser).type == TOK_RPAREN) next(parser);
+		else parser_error("A ')' expected", current_token(parser));
+
+		children = (Node **)malloc(sizeof(Node *));
+		print_stmt->child_count++;
+		children[print_stmt->child_count - 1] = current;
+	}
+    print_stmt->children = children;
+    return print_stmt;
 }

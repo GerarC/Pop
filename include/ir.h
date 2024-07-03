@@ -25,6 +25,8 @@ typedef enum {
 	IR_BINNOT,
 
 	IR_ENDBLOCK,
+
+	IR_TEMP_PRINT_INT,
 } IrOperationType;
 
 typedef enum {

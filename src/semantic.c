@@ -9,10 +9,14 @@ static Scope *scope;
 const char *compare_types(Node *a, Node *b);
 void statement_analysis(Node *stmt);
 void if_while_analysis(Node *ifwh);
+void else_analysis(Node *else_s);
 void expression_analysis(Node *expr);
 void binaryop_analysis(Node *binary);
 void unitary_analysis(Node *unit);
 void literal_analysis(Node *lit);
+
+
+void temp_print_int_analysis(Node *lit);
 
 void semantic_error(char *message, Node *node) {
 	Token tok = node->token;
@@ -95,6 +99,14 @@ void statement_analysis(Node *stmt) {
 			if_while_analysis(stmt);
 			break;
 
+		case TOK_ELSE:
+			else_analysis(stmt);
+			break;
+
+		case TOK_PRINT_INT:
+			temp_print_int_analysis(stmt);
+			break;
+
 		default:
 			semantic_error("Ilegal Token", stmt);
 			break;
@@ -109,8 +121,15 @@ void if_while_analysis(Node *ifwh) {
 		for (int i = 1; i < ifwh->child_count; i++)
 			statement_analysis(ifwh->children[i]);
 	}
-
 	scope = exit_scope(scope);
+}
+
+void else_analysis(Node *else_s) {
+	Token tok = else_s->token;
+	if (tok.type == TOK_IF) {
+		for (int i = 0; i < else_s->child_count; i++)
+			statement_analysis(else_s->children[i]);
+	}
 }
 
 void expression_analysis(Node *expr) {
@@ -203,4 +222,9 @@ void literal_analysis(Node *lit) {
 			semantic_error("Unknown type", lit);
 			break;
 	}
+}
+
+void temp_print_int_analysis(Node *print_int){
+	Token tok = print_int->token;
+	expression_analysis(print_int->children[0]);
 }

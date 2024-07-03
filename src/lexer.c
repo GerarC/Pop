@@ -264,8 +264,14 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 				tok_type = TOK_NOT;
 			else if (compare_reserved(&curr, "if", &lex, &col))
 				tok_type = TOK_IF;
+			else if (compare_reserved(&curr, "else", &lex, &col))
+				tok_type = TOK_ELSE;
+			else if (compare_reserved(&curr, "while", &lex, &col))
+				tok_type = TOK_WHILE;
 			else if (compare_reserved(&curr, "new", &lex, &col))
 				tok_type = TOK_NEW;
+			else if (compare_reserved(&curr, "print_int", &lex, &col))
+				tok_type = TOK_PRINT_INT;
 			else tok_type = TOK_SYMBOL;
 
 			if ((isalpha(*curr) || isdigit(*curr) || *curr == '_') &&

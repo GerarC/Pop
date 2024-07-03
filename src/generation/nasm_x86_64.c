@@ -114,21 +114,13 @@ char *val_string(IrValue value) {
 			snprintf(string_val, 10, "%.2f", value.data.fval);
 			break;
 		case IRVAL_ADDRESS:
-			/*snprintf(string_val, 10, "%s", registers[allocate_register()]);*/
+			snprintf(string_val, 10, ".POP%i", value.data.index);
 			break;
 	}
 	return string_val;
 }
 
 // Single operation writters
-void temp_printint(Assembler *code, int r) {
-	snprintf(asm_line, MAX_ASM_LINE_SIZE,
-			 "\tmov\trdi, %s\n"
-			 "\tcall\tprint\n",
-			 registers[r]);
-	add_line(code, asm_line);
-}
-
 int load_value(Assembler *code, IntermediateRepresentation *ir, IrValue value) {
 	char *arg = val_string(value);
 	int r;
@@ -312,6 +304,54 @@ void generate_unitaryop(Assembler *code, IntermediateRepresentation *ir,
 	}
 }
 
+void generate_if(Assembler *code, IntermediateRepresentation *ir, int index) {
+	IrOperation op = ir->instructions[index];
+	int arg1 = load_value(code, ir, op.arg1);
+	char *addr = val_string(op.result);
+	snprintf(asm_line, MAX_ASM_LINE_SIZE,
+			 "\ttest\t%s, %s\n"
+			 "\tjz\t%s\n",
+			 registers[arg1], registers[arg1], addr);
+	free(addr);
+	deallocate_register(arg1);
+	add_line(code, asm_line);
+}
+
+void generate_else(Assembler *code, IntermediateRepresentation *ir, int index) {
+	IrOperation op = ir->instructions[index];
+	char *self_addr = val_string(op.arg1);
+	char *addr = val_string(op.result);
+	snprintf(asm_line, MAX_ASM_LINE_SIZE,
+			 "\tjmp\t%s\n"
+			 "%s:\n",
+			 addr, self_addr);
+	free(addr);
+	free(self_addr);
+	add_line(code, asm_line);
+}
+
+void generate_endblock(Assembler *code, IntermediateRepresentation *ir,
+					   int index) {
+	IrOperation op = ir->instructions[index];
+	char *addr = val_string(op.result);
+	snprintf(asm_line, MAX_ASM_LINE_SIZE, "%s:\n", addr);
+	free(addr);
+	add_line(code, asm_line);
+}
+
+void generate_temp_print_int(Assembler *code, IntermediateRepresentation *ir,
+					   int index){
+
+	IrOperation op = ir->instructions[index];
+	int r = load_value(code, ir, op.arg1);
+	snprintf(asm_line, MAX_ASM_LINE_SIZE,
+			 "\tmov\trdi, %s\n"
+			 "\tcall\tprint\n",
+			 registers[r]);
+	add_line(code, asm_line);
+	deallocate_register(r);
+}
+
 void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
 	log_warn("NASM CODE GENERATION NOT IMPLEMENTED");
 	size i;
@@ -338,11 +378,26 @@ void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
 				generate_unitaryop(code, ir, i);
 				break;
 
+			case IR_IF:
+				generate_if(code, ir, i);
+				break;
+
+			case IR_ELSE:
+				generate_else(code, ir, i);
+				break;
+
+			case IR_ENDBLOCK:
+				generate_endblock(code, ir, i);
+				break;
+
+			case IR_TEMP_PRINT_INT:
+				generate_temp_print_int(code, ir, i);
+				break;
+
 			default:
 				log_fatal("%i OP NOT IMPLEMENTED", op.type);
 				exit(1);
 				break;
 		}
 	}
-	temp_printint(code, ir->instructions[i - 1].result.data.index);
 }

@@ -53,6 +53,7 @@ typedef enum _token_type_e {
 	TOK_ARROW,	  // ->
 	TOK_IF,		  // if
 	TOK_ELSE,	  // if
+	TOK_WHILE,	  // if
 	// TOK_IMPORT, // Constant
 	// Grouping
 	TOK_LPAREN, // (
@@ -64,6 +65,8 @@ typedef enum _token_type_e {
 	TOK_LANGLE, // <
 	TOK_RANGLE, // >
 
+
+    TOK_PRINT_INT,
 	// Invalid
 	TOK_INVALID
 } TokenType;

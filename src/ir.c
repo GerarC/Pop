@@ -8,11 +8,14 @@ void program_ir(IntermediateRepresentation *ir, Node *program);
 void statement_ir(IntermediateRepresentation *ir, Node *stmt);
 void expression_ir(IntermediateRepresentation *ir, Node *expr);
 void if_ir(IntermediateRepresentation *ir, Node *expr);
+void else_ir(IntermediateRepresentation *ir, Node *else_s);
 void binaryop_ir(IntermediateRepresentation *ir, Node *bin);
 void unitary_ir(IntermediateRepresentation *ir, Node *unit);
 void cross_reference_builder(IntermediateRepresentation *ir);
 /*void literal_ir(IntermediateRepresentation *ir, Node *lit);*/
 IrValue literal_val(IntermediateRepresentation *ir, Node *lit);
+
+void temp_print_int_ir(IntermediateRepresentation *ir, Node *print_int);
 
 char *irval_string(IrValue value) {
 	char *string_val = (char *)malloc(sizeof(char) * 10);
@@ -34,67 +37,68 @@ void print_ir(IntermediateRepresentation *ir) {
 	if (LOG_DEBUG > LOG_LEVEL) return;
 	log_debug("Printing IR");
 
+	printf("begin\n");
 	for (size i = 0; i < ir->count; i++) {
 		IrOperationType type = ir->instructions[i].type;
 		char *arg1 = irval_string(ir->instructions[i].arg1);
 		char *arg2 = irval_string(ir->instructions[i].arg2);
 		char *result = irval_string(ir->instructions[i].result);
-		char operation[5];
+		char operation[16];
 
 		switch (type) {
 			case IR_ADD:
 				strcpy(operation, "+");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_SUB:
 				strcpy(operation, "-");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_MUL:
 				strcpy(operation, "*");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_DIV:
 				strcpy(operation, "/");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 
 			case IR_EQUAL:
 				strcpy(operation, "==");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_DIFF:
 				strcpy(operation, "!=");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_GT:
 				strcpy(operation, ">");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_GEQT:
 				strcpy(operation, ">=");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_LT:
 				strcpy(operation, "<");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 			case IR_LEQT:
 				strcpy(operation, "<=");
-				printf("%s = %s %s %s", result, arg1, operation, arg2);
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 
 			case IR_UMINUS:
 				strcpy(operation, "-");
-				printf("%s = %s %s", result, operation, arg1);
+				printf("\t%s = %s %s", result, operation, arg1);
 				break;
 			case IR_NOT:
 				strcpy(operation, "not");
-				printf("%s = %s %s", result, operation, arg1);
+				printf("\t%s = %s %s", result, operation, arg1);
 				break;
 			case IR_BINNOT:
 				strcpy(operation, "~");
-				printf("%s = %s %s", result, operation, arg1);
+				printf("\t%s = %s %s", result, operation, arg1);
 				break;
 
 			case IR_IF:
@@ -102,12 +106,22 @@ void print_ir(IntermediateRepresentation *ir) {
 				printf("%s !%s goto endblock_%s", operation, arg1, result);
 				break;
 
+			case IR_ELSE:
+				strcpy(operation, "else");
+				printf("%s", operation);
+				break;
+
+			case IR_TEMP_PRINT_INT:
+				strcpy(operation, "print");
+				printf("\t%s(%s)", operation, arg1);
+				break;
+
 			case IR_ENDBLOCK:
 				printf("endblock_%s:", result);
 				break;
 
 			default:
-				log_error("Op %i not implemented", type);
+				log_error("Op %i printing not implemented", type);
 		}
 		free(arg1);
 		free(arg2);
@@ -164,6 +178,7 @@ IntermediateRepresentation *create_intermediate_representation(Node *ast) {
 	program_ir(ir, ast);
 
 	cross_reference_builder(ir);
+
 	return ir;
 }
 
@@ -213,6 +228,14 @@ void statement_ir(IntermediateRepresentation *ir, Node *stmt) {
 			if_ir(ir, stmt);
 			break;
 
+		case TOK_ELSE:
+			else_ir(ir, stmt);
+			break;
+
+		case TOK_PRINT_INT:
+			temp_print_int_ir(ir, stmt);
+			break;
+
 		default:
 			ir_error("Not implemented", stmt);
 			break;
@@ -237,22 +260,29 @@ void if_ir(IntermediateRepresentation *ir, Node *if_stmt) {
 	IrOperation op = {.type = IR_IF, .arg1 = arg1, .result = result};
 
 	add_iroperation(ir, op);
-	int limit =
-		if_stmt->children[if_stmt->child_count - 1]->token.type == TOK_ELSE
-			? if_stmt->child_count - 1
-			: if_stmt->child_count;
 
-	for (size i = 1; i < limit; i++) {
+	for (size i = 1; i < if_stmt->child_count; i++) {
 		statement_ir(ir, if_stmt->children[i]);
 	}
 
-	if (limit < if_stmt->child_count)
-		log_warn("ELSE INTERMEDIARY REPRESENTATION NOT IMPLEMENTED");
-
 	result.data.index = ir->count;
 
-	IrOperation end_lbl = {.type = IR_ENDBLOCK, .result = result};
+	IrOperation end_lbl = {
+		.type = IR_ENDBLOCK, .arg1 = result, .result = result};
 
+	add_iroperation(ir, end_lbl);
+}
+
+void else_ir(IntermediateRepresentation *ir, Node *else_s) {
+	if (ir->instructions[ir->count - 1].type != IR_ENDBLOCK)
+		ir_error("An else block must be after another block", else_s);
+	ir->instructions[ir->count - 1].type = IR_ELSE;
+
+	for (size i = 0; i < else_s->child_count; i++)
+		statement_ir(ir, else_s->children[i]);
+
+	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
+	IrOperation end_lbl = {.type = IR_ENDBLOCK, .result = result};
 	add_iroperation(ir, end_lbl);
 }
 
@@ -423,26 +453,45 @@ void free_intermediate_representation(IntermediateRepresentation *ir) {
 }
 
 void cross_reference_builder(IntermediateRepresentation *ir) {
-	log_info("enter to cross reference");
 	int stack[MAX_STACK_SIZE];
 	int sp = 0;
 	for (size i = 0; i < ir->count; i++) {
 		IrOperation op = ir->instructions[i];
 		if (op.type == IR_IF) {
-			log_info("enter to if stack");
+			stack[sp] = i;
+			sp++;
+		} else if (op.type == IR_ELSE) {
+			size index = stack[--sp];
+			ir->instructions[index].result.data.index = i;
 			stack[sp] = i;
 			sp++;
 		} else if (op.type == IR_ENDBLOCK) {
 			size index = stack[--sp];
-			if (ir->instructions[index].type == IR_IF) {
-				ir->instructions[index].result.data.index = i;
-			}
-			log_info("outs to end stack");
+			ir->instructions[index].result.data.index = i;
 		}
 	}
-	log_info("outs to cross reference");
 	if (sp != 0) {
 		log_fatal("NOT ALL BLOCK ARE CLOSED");
 		exit(1);
 	}
+}
+
+void temp_print_int_ir(IntermediateRepresentation *ir, Node *print_int) {
+	IrValue arg1 = {0};
+
+	if (print_int->children[0]) {
+		if (is_literal(print_int->children[0])) {
+			arg1 = literal_val(ir, print_int->children[0]);
+		} else {
+			expression_ir(ir, print_int->children[0]);
+			arg1.type = IRVAL_ADDRESS;
+			arg1.data.index = ir->count - 1;
+		}
+	}
+
+	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
+
+	IrOperation op = {.type = IR_TEMP_PRINT_INT, .arg1 = arg1, .result = result};
+
+	add_iroperation(ir, op);
 }
