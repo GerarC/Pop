@@ -6,7 +6,6 @@
 #include "../include/log.h"
 #include "../include/parser.h"
 #include "../include/semantic.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,6 +19,7 @@ void print_usage(char *program) {
 }
 
 int main(int argc, char **argv) {
+
 	if (argc < 3) {
 		print_usage(argv[0]);
 		return -1;

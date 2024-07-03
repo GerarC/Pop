@@ -4,17 +4,27 @@
 #include <string.h>
 #include <time.h>
 
-void logger(LogType type, const char *message, va_list args) {
-	if (type > LOG_LEVEL) return;
+// Colors
+#define COLOR_TRACE "\x1B[34m"
+#define COLOR_DEBUG "\x1B[36m"
+#define COLOR_INFO "\x1B[32m"
+#define COLOR_WARN "\x1B[33m"
+#define COLOR_ERROR "\x1B[31m"
+#define COLOR_FATAL "\x1B[35m"
+#define COLOR_RESET "\033[0m"
+
+void logger(LogType type, const char *file, const char *message, ...) {
+	if (type < LOG_LEVEL) return;
+	va_list ap;
 	time_t now;
 	time(&now);
 	char *date = ctime(&now);
-	date[strlen(date) - 1] = '\0';
+	date[strlen(date) - 6] = '\0';
 	char tag[LOG_TAG_SIZE];
 	char color[LOG_COLOR_SIZE];
 	FILE *output;
 	switch (type) {
-        case LOG_TRACE:
+		case LOG_TRACE:
 			strcpy(tag, "TRACE");
 			strcpy(color, COLOR_TRACE);
 			output = stdout;
@@ -45,51 +55,17 @@ void logger(LogType type, const char *message, va_list args) {
 			output = stderr;
 			break;
 	}
-	if (PRINT_COLORS)
-		fprintf(output, "%s%s [%s]:%s ", color, date, tag, COLOR_RESET);
-	else fprintf(output, "%s [%s]: ", date, tag);
-	vfprintf(output, message, args);
+
+	if (PRINT_COLORS) fprintf(output, "%s%s [%s]", color, date, tag);
+	else fprintf(output, "%s [%s] %s: ", date, tag, file);
+
+	if (PRINT_FILE) fprintf(output, " %s: ", file);
+	else fprintf(output, ": ");
+
+    if (PRINT_COLORS) fprintf(output, "%s", COLOR_RESET);
+
+	va_start(ap, message);
+	vfprintf(output, message, ap);
 	fprintf(output, "\n");
-}
-
-void log_trace(const char *message, ...) {
-	va_list args;
-	va_start(args, message);
-	logger(LOG_TRACE, message, args);
-	va_end(args);
-}
-
-void log_debug(const char *message, ...) {
-	va_list args;
-	va_start(args, message);
-	logger(LOG_DEBUG, message, args);
-	va_end(args);
-}
-
-void log_info(const char *message, ...) {
-	va_list args;
-	va_start(args, message);
-	logger(LOG_INFO, message, args);
-	va_end(args);
-}
-
-void log_warn(const char *message, ...) {
-	va_list args;
-	va_start(args, message);
-	logger(LOG_WARN, message, args);
-	va_end(args);
-}
-
-void log_error(const char *message, ...) {
-	va_list args;
-	va_start(args, message);
-	logger(LOG_ERROR, message, args);
-	va_end(args);
-}
-
-void log_fatal(const char *message, ...) {
-	va_list args;
-	va_start(args, message);
-	logger(LOG_FATAL, message, args);
-	va_end(args);
+	va_end(ap);
 }

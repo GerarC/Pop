@@ -34,7 +34,7 @@ char *irval_string(IrValue value) {
 }
 
 void print_ir(IntermediateRepresentation *ir) {
-	if (LOG_DEBUG > LOG_LEVEL) return;
+	if (LOG_DEBUG < LOG_LEVEL) return;
 	log_debug("Printing IR");
 
 	printf("begin\n");

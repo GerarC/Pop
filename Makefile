@@ -25,15 +25,18 @@ compile: $(objs)
 	@[ -d "$(build)" ] || { mkdir "$(build)"; }
 	$(out)$(target) $(objs) $(flags) $(libs)
 
-ex_%:
-	$(target) -c ./examples/$@.pop -o $@.asm && cat -n $@.asm && nasm $@.asm -felf64 -o $@.o && ld $@.o -o $@
-	echo "EXECUTION: "
-	./$@
-	rm ./$@*
+ex%:
+	@printf "COMPILATION: \n"
+	@$(target) -c ./examples/$@.pop -o $@.asm && nasm $@.asm -felf64 -o $@.o && ld $@.o -o $@
+	@printf "\nASSEMBLER CODE: \n"
+	@cat -n $@.asm
+	@printf "\nEXECUTION: \n"
+	@./$@
+	@rm ./$@*
 
 
 clean:
-		rm $(objs)
+		@rm $(objs)
 
 debug:
 	gcc -g $(src)* -o $(target)_d

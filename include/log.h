@@ -7,32 +7,27 @@
 /* Configuration of the logs */
 #define LOG_TAG_SIZE 8
 #define LOG_COLOR_SIZE 8
+#define PRINT_FILE 1
 #define PRINT_COLORS 1
-#define LOG_LEVEL 5 // the most higher level the most log types are printed
+#define LOG_LEVEL 0 // the most higher level the most log types are printed
 
-// Colors
-#define COLOR_TRACE "\x1B[34m"
-#define COLOR_DEBUG "\x1B[36m"
-#define COLOR_INFO "\x1B[32m"
-#define COLOR_WARN "\x1B[33m"
-#define COLOR_ERROR "\x1B[31m"
-#define COLOR_FATAL "\x1B[35m"
-#define COLOR_RESET "\033[0m"
 
 typedef enum LogType {
-	LOG_FATAL,
-	LOG_ERROR,
-	LOG_WARN,
-	LOG_INFO,
-	LOG_DEBUG,
 	LOG_TRACE,
+	LOG_DEBUG,
+	LOG_INFO,
+	LOG_WARN,
+	LOG_ERROR,
+	LOG_FATAL,
 } LogType;
 
-void log_trace(const char *message, ...);
-void log_debug(const char *message, ...);
-void log_info(const char *message, ...);
-void log_warn(const char *message, ...);
-void log_error(const char *message, ...);
-void log_fatal(const char *message, ...);
+#define log_trace(...) logger(LOG_TRACE, __FILE__, __VA_ARGS__)
+#define log_debug(...) logger(LOG_DEBUG, __FILE__, __VA_ARGS__)
+#define log_info(...) logger(LOG_INFO, __FILE__, __VA_ARGS__)
+#define log_warn(...) logger(LOG_WARN, __FILE__, __VA_ARGS__)
+#define log_error(...) logger(LOG_ERROR, __FILE__, __VA_ARGS__)
+#define log_fatal(...) logger(LOG_FATAL, __FILE__, __VA_ARGS__)
+
+void logger(LogType type, const char *file, const char *message, ...);
 
 #endif // LOG_H
