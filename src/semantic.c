@@ -10,7 +10,7 @@ const char *compare_types(Node *a, Node *b);
 void statement_analysis(Node *stmt);
 void declaration_analysis(Node *declaration);
 void assignment_analysis(Node *assignment);
-void if_while_analysis(Node *ifwh);
+void ifwhile_analysis(Node *ifwh);
 void else_analysis(Node *else_s);
 void expression_analysis(Node *expr);
 void binaryop_analysis(Node *binary);
@@ -108,7 +108,8 @@ void statement_analysis(Node *stmt) {
 			break;
 
 		case TOK_IF:
-			if_while_analysis(stmt);
+		case TOK_WHILE:
+			ifwhile_analysis(stmt);
 			break;
 
 		case TOK_ELSE:
@@ -164,7 +165,7 @@ void assignment_analysis(Node *assignment) {
 	strncpy(assignment->sem_type, type, MAX_SYMBOL_SIZE);
 }
 
-void if_while_analysis(Node *ifwh) {
+void ifwhile_analysis(Node *ifwh) {
 	semantic_scope = enter_scope(semantic_scope);
 	Token tok = ifwh->token;
 	if (tok.type == TOK_IF) {

@@ -15,6 +15,7 @@ void assignment_ir(IntermediateRepresentation *ir, Node *assignment);
 
 void if_ir(IntermediateRepresentation *ir, Node *expr);
 void else_ir(IntermediateRepresentation *ir, Node *else_s);
+void while_ir(IntermediateRepresentation *ir, Node *while_s);
 
 void expression_ir(IntermediateRepresentation *ir, Node *expr);
 void binaryop_ir(IntermediateRepresentation *ir, Node *bin);
@@ -73,6 +74,14 @@ void print_ir(IntermediateRepresentation *ir) {
 			case IR_ELSE:
 				strcpy(operation, "else");
 				printf("%s", operation);
+				break;
+			case IR_WHILE:
+				strcpy(operation, "while");
+				printf("%s", operation);
+				break;
+			case IR_DO:
+				strcpy(operation, "do");
+				printf("%s %s", arg1, operation);
 				break;
 
 			case IR_ADD:
@@ -226,6 +235,10 @@ void statement_ir(IntermediateRepresentation *ir, Node *stmt) {
 			if_ir(ir, stmt);
 			break;
 
+		case TOK_WHILE:
+			while_ir(ir, stmt);
+			break;
+
 		case TOK_ELSE:
 			else_ir(ir, stmt);
 			break;
@@ -355,6 +368,37 @@ void else_ir(IntermediateRepresentation *ir, Node *else_s) {
 
 	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
 	IrOperation end_lbl = {.type = IR_ENDBLOCK, .result = result};
+	add_iroperation(ir, end_lbl);
+}
+
+void while_ir(IntermediateRepresentation *ir, Node *while_s) {
+	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
+	IrOperation while_op = {.type = IR_WHILE, .result = result};
+	add_iroperation(ir, while_op);
+
+	IrValue arg1 = {0};
+	if (while_s->children[0]) {
+		if (is_literal(while_s->children[0]))
+			arg1 = literal_val(ir, while_s->children[0]);
+		else {
+			expression_ir(ir, while_s->children[0]);
+			arg1.type = IRVAL_ADDRESS;
+			arg1.data.index = ir->count - 1;
+		}
+	}
+
+	result.data.index = ir->count;
+	IrOperation op = {.type = IR_DO, .arg1 = arg1, .result = result};
+	add_iroperation(ir, op);
+
+	for (size i = 1; i < while_s->child_count; i++)
+		statement_ir(ir, while_s->children[i]);
+
+	result.data.index = ir->count;
+
+	IrOperation end_lbl = {
+		.type = IR_ENDBLOCK, .arg1 = result, .result = result};
+
 	add_iroperation(ir, end_lbl);
 }
 
@@ -537,7 +581,7 @@ void cross_reference_builder(IntermediateRepresentation *ir) {
 	int sp = 0;
 	for (size i = 0; i < ir->count; i++) {
 		IrOperation op = ir->instructions[i];
-		if (op.type == IR_IF) {
+		if (op.type == IR_IF || op.type == IR_WHILE || op.type == IR_DO) {
 			stack[sp] = i;
 			sp++;
 		} else if (op.type == IR_ELSE) {
@@ -547,7 +591,17 @@ void cross_reference_builder(IntermediateRepresentation *ir) {
 			sp++;
 		} else if (op.type == IR_ENDBLOCK) {
 			size index = stack[--sp];
-			ir->instructions[index].result.data.index = i;
+			ir->instructions[i].arg1.type = IRVAL_INT;
+			if (ir->instructions[index].type == IR_IF)
+				ir->instructions[index].result.data.index = i;
+			else if (ir->instructions[index].type == IR_DO) {
+				ir->instructions[index].result.data.index = i;
+				index = stack[--sp];
+				if (ir->instructions[index].type == IR_WHILE) {
+					ir->instructions[i].arg1.type = IRVAL_ADDRESS;
+					ir->instructions[i].arg1.data.index = index;
+				}
+			}
 		}
 	}
 	if (sp != 0) {

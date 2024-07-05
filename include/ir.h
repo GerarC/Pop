@@ -1,8 +1,8 @@
 #ifndef INTERMEDIARY_REPRESENTATION_H
 #define INTERMEDIARY_REPRESENTATION_H
 
-#include "parser.h"
 #include "config.h"
+#include "parser.h"
 
 typedef enum {
 	IR_ADD,
@@ -21,6 +21,8 @@ typedef enum {
 	IR_NOT,
 	IR_IF,
 	IR_ELSE,
+	IR_WHILE,
+	IR_DO,
 
 	IR_BINNOT,
 
@@ -45,14 +47,14 @@ typedef struct _ir_value_t {
 		int ival;
 		float fval;
 		size index;
-        char ident[MAX_SYMBOL_SIZE];
+		char ident[MAX_SYMBOL_SIZE];
 	} data;
 } IrValue;
 
 typedef struct _ir_operation_t {
 	IrOperationType type;
-	IrValue arg1; // can be null
-	IrValue arg2; // can be null
+	IrValue arg1;	// can be null
+	IrValue arg2;	// can be null
 	IrValue result; // can be null
 } IrOperation;
 

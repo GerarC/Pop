@@ -45,6 +45,7 @@ By the moment the steps I've followed to reach the compiler has been:
         IrOperationType type;
         IrValue arg1;
         IrValue arg2;
+        IrValue result;
    } IrOperation;
    ```
 
@@ -84,21 +85,41 @@ I think I'm not going to implement this, at least not soon.
 It could be in a future. But the idea of mine is to enjoy this project
 and I know that center of deploy to windows will make me have headaches.
 
+## Examples
+
+If you want to explore what this language can do, you can compile the examples.
+There are some examples:
+- 01-math_expr
+- 02-if_else
+- 03-variables
+- 04-while
+    
+To compile and explore these examples use the next command:
+~~~ bash
+make ex<example_name>
+~~~
+for example `make ex03-variables`
+
 ## Milestones
 
 - [x] Compiled to native instructions
 - [x] Variables
+- [x] Loops
+- [x] Statically typed (Like Typescript)
 - [ ] Arrays
 - [ ] Chars
 - [ ] Strings
 - [ ] Functions
-- [ ] Statically typed (Like Typescript)
 - [ ] Turing-complete (Can emulate itself)
 - [ ] Read and write files
+- [ ] python-like import system 
 - [ ] Structs
 - [ ] Classes
 - [ ] Self-hosted (when the classes are done)
 - [ ] Optimized
+- [ ] First class functions
+- [ ] Arrow functions
+- [ ] Map, filter, foreach, ..., etc (I will see things of haskell)
 - [ ] List comprehesion-like system
 
 ## Resources

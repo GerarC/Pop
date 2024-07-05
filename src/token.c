@@ -111,7 +111,8 @@ char *token_string(Token tok) {
 			break;
 
 		case TOK_IF:
-			token_type = strdup("if");
+		case TOK_WHILE:
+			token_type = strdup(tok.lexeme);
 			break;
 
 		case TOK_ELSE:

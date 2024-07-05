@@ -70,7 +70,7 @@ Node *parse_type(Parser *parser);
 Node *parse_idents(Parser *parser);
 Node *parse_assign(Parser *parser);
 
-Node *parse_if(Parser *parser);
+Node *parse_ifwhile(Parser *parser);
 Node *parse_else(Parser *parser);
 Node *parse_while(Parser *parser);
 
@@ -191,7 +191,7 @@ Node *parse_statement(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *stmt = NULL;
 	if (tok.type == TOK_LET) stmt = parse_literal(parser);
-	else if (tok.type == TOK_IF) stmt = parse_if(parser);
+	else if (tok.type == TOK_IF || tok.type == TOK_WHILE) stmt = parse_ifwhile(parser);
 	else if (tok.type == TOK_ELSE) stmt = parse_else(parser);
 	else if (tok.type == TOK_PRINT_INT) stmt = parse_temp_print_int(parser);
 	else if (is_type(tok) && next_token(parser).type == TOK_IDENTIFIER)
@@ -257,7 +257,7 @@ Node *parse_assign(Parser *parser) {
 	return assign;
 }
 
-Node *parse_if(Parser *parser) {
+Node *parse_ifwhile(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *if_stmt = NULL;
 	Node *current = NULL;

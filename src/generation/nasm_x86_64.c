@@ -317,7 +317,7 @@ void generate_unitaryop(Assembler *code, IntermediateRepresentation *ir,
 
 void generate_glob_decl(Assembler *code, IntermediateRepresentation *ir,
 						int index) {
-    // TODO: Prepare things to do this with any type, not only int
+	// TODO: Prepare things to do this with any type, not only int
 	IrOperation op = ir->instructions[index];
 	if (op.arg1.type == IRVAL_IDENTIFIER) {
 		snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcommon\t%s 8:8\n",
@@ -332,8 +332,8 @@ void generate_glob_decl(Assembler *code, IntermediateRepresentation *ir,
 
 void generate_assign(Assembler *code, IntermediateRepresentation *ir,
 					 int index) {
-    // FIX: multi assignation if broken, fix that future Gerard.
-    // By the moment a = b = c isn't available
+	// FIX: multi assignation if broken, fix that future Gerard.
+	// By the moment a = b = c isn't available
 	IrOperation op = ir->instructions[index];
 	int r = load_value(code, ir, op.arg2);
 	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tmov\t%s, %s\n",
@@ -342,7 +342,7 @@ void generate_assign(Assembler *code, IntermediateRepresentation *ir,
 	add_line(code, asm_line);
 }
 
-void generate_if(Assembler *code, IntermediateRepresentation *ir, int index) {
+void generate_ifdo(Assembler *code, IntermediateRepresentation *ir, int index) {
 	IrOperation op = ir->instructions[index];
 	int arg1 = load_value(code, ir, op.arg1);
 	char *addr = val_string(op.result);
@@ -371,7 +371,25 @@ void generate_else(Assembler *code, IntermediateRepresentation *ir, int index) {
 void generate_endblock(Assembler *code, IntermediateRepresentation *ir,
 					   int index) {
 	IrOperation op = ir->instructions[index];
+	char *addr = NULL;
+	if (op.arg1.type == IRVAL_ADDRESS) {
+		log_trace("hello from endblock");
+		addr = val_string(op.arg1);
+		snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tjmp\t%s\n", addr);
+		free(addr);
+		add_line(code, asm_line);
+	}
+	addr = val_string(op.result);
+	snprintf(asm_line, MAX_ASM_LINE_SIZE, "%s:\n", addr);
+	free(addr);
+	add_line(code, asm_line);
+}
+
+void generate_while(Assembler *code, IntermediateRepresentation *ir,
+					int index) {
+	IrOperation op = ir->instructions[index];
 	char *addr = val_string(op.result);
+
 	snprintf(asm_line, MAX_ASM_LINE_SIZE, "%s:\n", addr);
 	free(addr);
 	add_line(code, asm_line);
@@ -404,6 +422,18 @@ void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
 				generate_assign(code, ir, i);
 				break;
 
+			case IR_IF:
+			case IR_DO:
+				generate_ifdo(code, ir, i);
+				break;
+			case IR_ELSE:
+				generate_else(code, ir, i);
+				break;
+
+			case IR_WHILE:
+				generate_while(code, ir, i);
+				break;
+
 			case IR_EQUAL:
 			case IR_DIFF:
 			case IR_GT:
@@ -421,14 +451,6 @@ void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
 			case IR_NOT:
 			case IR_BINNOT:
 				generate_unitaryop(code, ir, i);
-				break;
-
-			case IR_IF:
-				generate_if(code, ir, i);
-				break;
-
-			case IR_ELSE:
-				generate_else(code, ir, i);
 				break;
 
 			case IR_ENDBLOCK:

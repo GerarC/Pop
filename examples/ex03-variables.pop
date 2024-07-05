@@ -13,7 +13,7 @@ c = 60 + 9
 print_int(c)
 print_int(a*b)
 
-a = a + 5
+a = a * 0
 print_int(a)
 
 if(a){
