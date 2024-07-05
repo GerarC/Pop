@@ -132,20 +132,13 @@ char *token_string(Token tok) {
 			break;
 
 		default:
-			log_warn("Token %i THIS SHOULD BE UNREACHEABLE", tok.type);
 			token_type = strdup("NOT IMPLEMENTED");
 			break;
 	}
 
-	if (tok.type == TOK_INT) {
-		snprintf(tkn_str, MAX_TOK_STRING_SIZE,
-				 "Token{ type: %s, location: (%i, %i), value: %d }", token_type,
-				 tok.location.line, tok.location.col, *(int *)tok.value);
-	} else {
 		snprintf(tkn_str, sizeof(tkn_str),
-				 "Token{ type: %s, location: (%i, %i), lexeme: %s }",
-				 token_type, tok.location.line, tok.location.col, tok.lexeme);
-	}
+				 "Tk(type: %s, loc: (%i:%i), lex: '%s')", token_type,
+				 tok.location.line, tok.location.col, tok.lexeme);
 
 	free(token_type);
 	return tkn_str;
@@ -167,5 +160,4 @@ void free_token(Token *tok) {
 	}
 	if (tok->lexeme != NULL) free(tok->lexeme);
 	if (tok->value != NULL) free(tok->value);
-	/*free(tok);*/;
 }

@@ -2,6 +2,7 @@
 
 #define EXPR_H
 #include "token.h"
+#include "lexer.h"
 #include "typedef.h"
 #include "config.h"
 
@@ -41,18 +42,13 @@ typedef struct _parser_t {
 /* Receives a token list (returned in the lexing step) and its size, will be
  * used to create the AST.
  * */
-Parser create_parser(Token *tokens, int length);
+Parser create_parser(Lexer *lex);
 
 /* Takes the parser and create an AST of the program
  * */
 Node *parse_program(Parser *parser);
 
-/* Prints the given AST, Receives the root node, a prefix used in the printing
- * algorithm (it should be ab empty string), set a 0 to the 'is_left' and
- * finally set as true 'is_root'.
- * */
-void print_ast(Node *root, const char *prefix, int is_left, int is_root);
-
+void print_ast(Node * root);
 
 /* Frees an AST by its root token
  * */

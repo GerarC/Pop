@@ -9,8 +9,7 @@
 #define LOG_COLOR_SIZE 8
 #define PRINT_FILE 1
 #define PRINT_COLORS 1
-#define LOG_LEVEL 0 // the most higher level the most log types are printed
-
+#define LOG_LEVEL 0 // the most lower level the most log types are printed
 
 typedef enum LogType {
 	LOG_TRACE,

@@ -1,2 +1,12 @@
-print_int(23)
-print_int(23)
+int base = 5
+int offset = 0
+int count
+while(offset < base) {
+    count = 0
+    while(count < base){
+        print_int(base * offset + count)
+        count = count + 1
+    }
+    offset = offset + 1
+    if(offset == count) print_int(offset * count)
+}

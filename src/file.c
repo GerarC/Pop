@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void file_error(const char *message, const char *file) {
+	log_fatal("'%s' %s", file);
+	exit(1);
+}
+
 char *read_file(const char *source) {
 	log_info("Reading %s", source);
 
@@ -11,10 +16,7 @@ char *read_file(const char *source) {
 
 	FILE *code_file = fopen(source, "rb");
 
-	if (!code_file) {
-		log_fatal("file called '%s' doesn't exists", source);
-		exit(1);
-	}
+	if (!code_file) file_error("file doesn't exists", source);
 
 	fseek(code_file, 0, SEEK_END);
 	lenght = ftell(code_file);
@@ -28,8 +30,9 @@ char *read_file(const char *source) {
 }
 
 void write_file(const char *destination, Assembler *code) {
-	FILE *destination_f = fopen(destination, "w");
+	FILE *dest = fopen(destination, "w");
+	if (!dest) file_error("file doesn't exists", destination);
 	for (int i = 0; i < code->count; i++)
-		fputs(code->lines[i], destination_f);
-	fclose(destination_f);
+		fputs(code->lines[i], dest);
+	fclose(dest);
 }

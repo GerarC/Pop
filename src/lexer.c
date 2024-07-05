@@ -5,34 +5,48 @@
 #include <stdlib.h>
 #include <string.h>
 
-Token *lex_line(const char *source, int row, const char *line,
-				int *token_count);
+Lexer create_lexer(const char *source) {
+	Lexer lex = {.count = 0,
+				 .capacity = 1,
+				 .tokens = (Token *)malloc(sizeof(Token) * 1)};
+	strlcpy(lex.source, source, MAX_FILE_SIZE);
 
-int compare_reserved(const char **curr, const char *rword, char **dest,
-					 int *col);
+	return lex;
+}
 
-Token *lex_program(const char *source, const char *program, int *lexer_len) {
-	log_info("Lexing initialized");
-	Token *tokens = (Token *)malloc(sizeof(Token) * 1);
-	TokenType tok_type;
-	int token_count = 0;
-	int capacity = 1;
+void add_token(Lexer *lexer, TokenType type, TokenLocation loc, int len,
+			   char *lex, void *val) {
+
+	if (lexer->count >= lexer->capacity) {
+		lexer->capacity *= 2;
+		lexer->tokens =
+			(Token *)realloc(lexer->tokens, sizeof(Token) * lexer->capacity);
+	}
+
+	lexer->tokens[lexer->count].type = type;
+	lexer->tokens[lexer->count].location = loc;
+	lexer->tokens[lexer->count].length = len;
+	lexer->tokens[lexer->count].lexeme = lex;
+	lexer->tokens[lexer->count].value = val;
+
+	lexer->count++;
+}
+
+void lex_program(Lexer *lexer, const char *program) {
+	log_info("Lexical analysis");
 
 	// Loop needed
 	const char *curr = program;
 	const char *start;
+
+	TokenType tok_type;
 	TokenLocation loc = {0};
-	strlcpy(loc.file, source, MAX_FILENAME_SIZE);
+	strlcpy(loc.file, lexer->source, MAX_FILENAME_SIZE);
 	int col = 0;
 
 	while (*curr != '\0') {
-		token_count++;
 		start = curr;
 		tok_type = TOK_INVALID;
-		if (token_count >= capacity) {
-			capacity *= 2;
-			tokens = (Token *)realloc(tokens, sizeof(Token) * capacity);
-		}
 
 		if (*curr == '\n') {
 			loc.col = col;
@@ -40,13 +54,11 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			char *lex = strdup("eln");
 
 			if (col == 0) {
-				token_count--;
 				loc.line++;
 				continue;
 			}
 
-			create_token(&(tokens[token_count - 1]), TOK_ELN, loc, curr - start,
-						 lex, NULL);
+			add_token(lexer, TOK_ELN, loc, curr - start, lex, NULL);
 			col = 0;
 			loc.line++;
 		} else if (isdigit(*curr)) {
@@ -96,8 +108,8 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			}
 
 			/*Create a token and put it in the list*/
-			create_token(&(tokens[token_count - 1]), tok_type, loc,
-						 curr - start, lexeme, val);
+			add_token(lexer, tok_type, loc, curr - start, lexeme, val);
+
 		} else if (*curr == '+' || *curr == '-' || *curr == '*' ||
 				   *curr == '/' || *curr == '%') {
 			// Operations
@@ -128,8 +140,7 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			strncpy(lexeme, start, len);
 			lexeme[len] = '\0';
 
-			create_token(&(tokens[token_count - 1]), tok_type, loc,
-						 curr - start, lexeme, NULL);
+			add_token(lexer, tok_type, loc, curr - start, lexeme, NULL);
 		} else if (*curr == '<' || *curr == '>' || *curr == '!') {
 			// Comparators
 			if (*curr == '<') tok_type = TOK_LT;
@@ -154,8 +165,7 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			strncpy(lexeme, start, len);
 			lexeme[len] = '\0';
 
-			create_token(&(tokens[token_count - 1]), tok_type, loc,
-						 curr - start, lexeme, NULL);
+			add_token(lexer, tok_type, loc, curr - start, lexeme, NULL);
 		} else if (*curr == '|' || *curr == '&' || *curr == '^') {
 			// Bynary Expressions
 			if (*curr == '|') tok_type = TOK_BINOR;
@@ -181,8 +191,7 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			strncpy(lexeme, start, len);
 			lexeme[len] = '\0';
 
-			create_token(&(tokens[token_count - 1]), tok_type, loc,
-						 curr - start, lexeme, NULL);
+			add_token(lexer, tok_type, loc, curr - start, lexeme, NULL);
 
 		} else if (*curr == '~') {
 			tok_type = TOK_BINNOT;
@@ -194,8 +203,7 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			strncpy(lex, start, len);
 			lex[len] = '\0';
 
-			create_token(&(tokens[token_count - 1]), tok_type, loc,
-						 curr - start, lex, NULL);
+			add_token(lexer, tok_type, loc, curr - start, lex, NULL);
 
 		} else if (*curr == '=') {
 		lex_program_eq:
@@ -222,8 +230,7 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			strncpy(lex, start, len);
 			lex[len] = '\0';
 
-			create_token(&(tokens[token_count - 1]), tok_type, loc,
-						 curr - start, lex, NULL);
+			add_token(lexer, tok_type, loc, curr - start, lex, NULL);
 
 		} else if (*curr == '(' || *curr == ')' || *curr == '{' ||
 				   *curr == '}' || *curr == '[' || *curr == ']' ||
@@ -247,8 +254,7 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			strncpy(lex, start, 1);
 			lex[1] = '\0';
 
-			create_token(&(tokens[token_count - 1]), tok_type, loc,
-						 curr - start, lex, NULL);
+			add_token(lexer, tok_type, loc, curr - start, lex, NULL);
 		} else if (isalpha(*curr) || *curr == '_') {
 			start = curr;
 			loc.col = col;
@@ -293,8 +299,8 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 				lex[len] = '\0';
 			}
 
-			create_token(&(tokens[token_count - 1]), tok_type, loc, strlen(lex),
-						 lex, NULL);
+			add_token(lexer, tok_type, loc, strlen(lex), lex, NULL);
+
 		} else if (*curr == ',') {
 			curr++;
 			col++;
@@ -305,15 +311,13 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			strncpy(lex, start, len);
 			lex[len] = '\0';
 
-			create_token(&(tokens[token_count - 1]), tok_type, loc,
-						 curr - start, lex, NULL);
+			add_token(lexer, tok_type, loc, curr - start, lex, NULL);
 
 		} else if (isspace(*curr)) {
 			while (isspace(*curr)) {
 				curr++;
 				col++;
 			}
-			token_count--;
 
 		} else if (*curr == '/') {
 		lex_program_comment:
@@ -322,7 +326,6 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			if (col == 1) curr++;
 			col = 0;
 			loc.line++;
-			token_count--;
 		} else {
 			loc.col = col;
 			curr++;
@@ -332,25 +335,11 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 			strncpy(lex, start, 1);
 			lex[1] = '\0';
 
-			create_token(&(tokens[token_count - 1]), TOK_INVALID, loc,
-						 curr - start, lex, NULL);
+			add_token(lexer, TOK_INVALID, loc, curr - start, lex, NULL);
 		}
 	}
 
-	token_count++;
-	if (token_count >= capacity) {
-		capacity *= 2;
-		tokens = (Token *)realloc(tokens, sizeof(Token) * capacity);
-	}
-	create_token(&(tokens[token_count - 1]), TOK_EOF, loc, 1, strdup("eof"),
-				 NULL);
-
-	/*for (int i = 0; i < token_count; i++) log_trace("%i\t%s", i,
-	 * token_string(tokens[i]));*/
-
-	log_info("Lexing finished");
-	*lexer_len = token_count;
-	return tokens;
+	add_token(lexer, TOK_EOF, loc, 1, strdup("eof"), NULL);
 }
 
 int compare_reserved(const char **curr, const char *rword, char **dest,
@@ -368,10 +357,16 @@ int compare_reserved(const char **curr, const char *rword, char **dest,
 	return 1;
 }
 
-void free_lexer(Token *tokens, int len) {
-	for (int i = 0; i < len; i++) {
-		free_token(tokens + i);
-	}
-	free(tokens);
+void print_lexer(Lexer *lex) {
+	if (LOG_DEBUG < LOG_LEVEL) return;
+	log_debug("Print lexer:");
+	for (int i = 0; i < lex->count; i++)
+		printf("\t%s\n", token_string(lex->tokens[i]));
+}
+
+void free_lexer(Lexer lex) {
+	for (int i = 0; i < lex.count; i++)
+		free_token(&lex.tokens[i]);
+	free(lex.tokens);
 	log_info("lexer cleaned");
 }

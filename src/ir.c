@@ -189,9 +189,11 @@ void add_iroperation(IntermediateRepresentation *ir, IrOperation op) {
 }
 
 void ir_error(const char *message, Node *node) {
-	Token tok = node->token;
-	log_fatal("%s:%i:%i %s '%s': %s", tok.location.file, tok.location.line,
-			  tok.location.col, node->sem_type, tok.lexeme, message);
+	if (node != NULL) {
+		Token tok = node->token;
+		log_fatal("%s:%i:%i %s '%s': %s", tok.location.file, tok.location.line,
+				  tok.location.col, node->sem_type, tok.lexeme, message);
+	} else log_fatal("%s", message);
 	exit(1);
 }
 
@@ -211,6 +213,7 @@ IntermediateRepresentation *create_intermediate_representation(Node *ast) {
 
 void program_ir(IntermediateRepresentation *ir, Node *program) {
 	scope = create_global_scope();
+    log_info("Intermediate Representation creation");
 	if (program->token.type != TOK_MAIN) ir_error("Not entry point", program);
 	for (size i = 0; i < program->child_count; i++) {
 		statement_ir(ir, program->children[i]);
@@ -573,7 +576,8 @@ IrValue literal_val(IntermediateRepresentation *ir, Node *lit) {
 }
 
 void free_intermediate_representation(IntermediateRepresentation *ir) {
-	log_warn("FREE INTERMEDIARY REPRESENTATION NOT IMPLEMENTED");
+	free(ir->instructions);
+	log_info("lexer cleaned");
 }
 
 void cross_reference_builder(IntermediateRepresentation *ir) {
@@ -604,19 +608,16 @@ void cross_reference_builder(IntermediateRepresentation *ir) {
 			}
 		}
 	}
-	if (sp != 0) {
-		log_fatal("NOT ALL BLOCK ARE CLOSED");
-		exit(1);
-	}
+	if (sp != 0) ir_error("NOT ALL BLOCK ARE CLOSED", NULL);
 }
 
 void temp_print_int_ir(IntermediateRepresentation *ir, Node *print_int) {
+	// WARN: This functions is temporal
 	IrValue arg1 = {0};
-
 	if (print_int->children[0]) {
-		if (is_literal(print_int->children[0])) {
+		if (is_literal(print_int->children[0]))
 			arg1 = literal_val(ir, print_int->children[0]);
-		} else {
+		else {
 			expression_ir(ir, print_int->children[0]);
 			arg1.type = IRVAL_ADDRESS;
 			arg1.data.index = ir->count - 1;
@@ -627,6 +628,5 @@ void temp_print_int_ir(IntermediateRepresentation *ir, Node *print_int) {
 
 	IrOperation op = {
 		.type = IR_TEMP_PRINT_INT, .arg1 = arg1, .result = result};
-
 	add_iroperation(ir, op);
 }

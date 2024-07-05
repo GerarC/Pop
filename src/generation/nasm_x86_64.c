@@ -34,6 +34,41 @@ void deallocate_register(size index) {
 	free_reg[index] = 1;
 }
 // end registers stuff
+char *val_string(IrValue value);
+
+int load_value(Assembler *code, IntermediateRepresentation *ir, IrValue value);
+void move_reg(Assembler *code, int r1, int r2);
+
+/// Binary operations
+int gen_add(Assembler *code, int r1, int r2);
+int gen_sub(Assembler *code, int r1, int r2);
+int gen_mul(Assembler *code, int r1, int r2);
+int gen_div(Assembler *code, int r1, int r2);
+int gen_comparison(Assembler *code, int r1, int r2, IrOperationType type);
+void generate_binaryop(Assembler *code, IntermediateRepresentation *ir,
+					   int index);
+
+/// Unitary operations
+int gen_bin_not(Assembler *code, int r1);
+int gen_uminus(Assembler *code, int r1);
+void generate_unitaryop(Assembler *code, IntermediateRepresentation *ir,
+						int index);
+
+/// Variables
+void generate_glob_decl(Assembler *code, IntermediateRepresentation *ir,
+						int index);
+void generate_assign(Assembler *code, IntermediateRepresentation *ir,
+					 int index);
+
+/// If and while statements
+void generate_ifdo(Assembler *code, IntermediateRepresentation *ir, int index);
+void generate_else(Assembler *code, IntermediateRepresentation *ir, int index);
+void generate_endblock(Assembler *code, IntermediateRepresentation *ir,
+					   int index);
+void generate_while(Assembler *code, IntermediateRepresentation *ir, int index);
+
+void generate_temp_print_int(Assembler *code, IntermediateRepresentation *ir,
+							 int index);
 
 void generate_operations(Assembler *code, IntermediateRepresentation *ir);
 void generate_header(Assembler *code);
@@ -46,6 +81,62 @@ void generate_nasm_x86_64(Assembler *code, IntermediateRepresentation *ir) {
 	generate_operations(code, ir);
 
 	generate_footer(code);
+}
+
+void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
+	log_info("NASM code generation");
+	size i;
+	for (i = 0; i < ir->count; i++) {
+		IrOperation op = ir->instructions[i];
+		int arg1, arg2;
+		switch (op.type) {
+			case IR_DECLARATION:
+				generate_glob_decl(code, ir, i);
+				break;
+			case IR_ASSIGNMENT:
+				generate_assign(code, ir, i);
+				break;
+
+			case IR_IF:
+			case IR_DO:
+				generate_ifdo(code, ir, i);
+				break;
+			case IR_ELSE:
+				generate_else(code, ir, i);
+				break;
+
+			case IR_WHILE:
+				generate_while(code, ir, i);
+				break;
+
+			case IR_EQUAL:
+			case IR_DIFF:
+			case IR_GT:
+			case IR_GEQT:
+			case IR_LT:
+			case IR_LEQT:
+
+			case IR_ADD:
+			case IR_SUB:
+			case IR_MUL:
+			case IR_DIV:
+				generate_binaryop(code, ir, i);
+				break;
+			case IR_UMINUS:
+			case IR_NOT:
+			case IR_BINNOT:
+				generate_unitaryop(code, ir, i);
+				break;
+
+			case IR_ENDBLOCK:
+				generate_endblock(code, ir, i);
+				break;
+
+			case IR_TEMP_PRINT_INT:
+				generate_temp_print_int(code, ir, i);
+				break;
+		}
+	}
 }
 
 void generate_header(Assembler *code) {
@@ -332,9 +423,11 @@ void generate_glob_decl(Assembler *code, IntermediateRepresentation *ir,
 
 void generate_assign(Assembler *code, IntermediateRepresentation *ir,
 					 int index) {
-	// FIX: multi assignation if broken, fix that future Gerard.
-	// By the moment a = b = c isn't available
+	/* FIX: multi assignation if broken, fix that future Gerard. By the moment a
+	 * = b = c isn't available
+	 * */
 	IrOperation op = ir->instructions[index];
+
 	int r = load_value(code, ir, op.arg2);
 	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tmov\t%s, %s\n",
 			 val_string(op.arg1), registers[r]);
@@ -373,7 +466,6 @@ void generate_endblock(Assembler *code, IntermediateRepresentation *ir,
 	IrOperation op = ir->instructions[index];
 	char *addr = NULL;
 	if (op.arg1.type == IRVAL_ADDRESS) {
-		log_trace("hello from endblock");
 		addr = val_string(op.arg1);
 		snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tjmp\t%s\n", addr);
 		free(addr);
@@ -397,7 +489,6 @@ void generate_while(Assembler *code, IntermediateRepresentation *ir,
 
 void generate_temp_print_int(Assembler *code, IntermediateRepresentation *ir,
 							 int index) {
-
 	IrOperation op = ir->instructions[index];
 	int r = load_value(code, ir, op.arg1);
 	snprintf(asm_line, MAX_ASM_LINE_SIZE,
@@ -406,60 +497,4 @@ void generate_temp_print_int(Assembler *code, IntermediateRepresentation *ir,
 			 registers[r]);
 	add_line(code, asm_line);
 	deallocate_register(r);
-}
-
-void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
-	log_warn("NASM CODE GENERATION NOT IMPLEMENTED");
-	size i;
-	for (i = 0; i < ir->count; i++) {
-		IrOperation op = ir->instructions[i];
-		int arg1, arg2;
-		switch (op.type) {
-			case IR_DECLARATION:
-				generate_glob_decl(code, ir, i);
-				break;
-			case IR_ASSIGNMENT:
-				generate_assign(code, ir, i);
-				break;
-
-			case IR_IF:
-			case IR_DO:
-				generate_ifdo(code, ir, i);
-				break;
-			case IR_ELSE:
-				generate_else(code, ir, i);
-				break;
-
-			case IR_WHILE:
-				generate_while(code, ir, i);
-				break;
-
-			case IR_EQUAL:
-			case IR_DIFF:
-			case IR_GT:
-			case IR_GEQT:
-			case IR_LT:
-			case IR_LEQT:
-
-			case IR_ADD:
-			case IR_SUB:
-			case IR_MUL:
-			case IR_DIV:
-				generate_binaryop(code, ir, i);
-				break;
-			case IR_UMINUS:
-			case IR_NOT:
-			case IR_BINNOT:
-				generate_unitaryop(code, ir, i);
-				break;
-
-			case IR_ENDBLOCK:
-				generate_endblock(code, ir, i);
-				break;
-
-			case IR_TEMP_PRINT_INT:
-				generate_temp_print_int(code, ir, i);
-				break;
-		}
-	}
 }

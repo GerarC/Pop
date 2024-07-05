@@ -1,5 +1,6 @@
 #include "../include/parser.h"
 #include "../include/log.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -85,8 +86,8 @@ Node *parse_literal(Parser *parser);
 void get_block_statements(Parser *parser, Node **parent);
 Node *parse_temp_print_int(Parser *parser);
 
-Parser create_parser(Token *tokens, int length) {
-	Parser parser = {tokens, length, 0};
+Parser create_parser(Lexer *lex) {
+	Parser parser = {.tokens = lex->tokens, lex->count, 0};
 	return parser;
 }
 
@@ -167,7 +168,7 @@ void next(Parser *parser) {
 }
 
 Node *parse_program(Parser *parser) {
-	log_info("Parsing Tokens");
+	log_info("Syntactic analysis");
 	Token tok = {TOK_MAIN, parser->tokens[0].location, 1, "main .", NULL};
 
 	Node *current = NULL;
@@ -191,7 +192,8 @@ Node *parse_statement(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *stmt = NULL;
 	if (tok.type == TOK_LET) stmt = parse_literal(parser);
-	else if (tok.type == TOK_IF || tok.type == TOK_WHILE) stmt = parse_ifwhile(parser);
+	else if (tok.type == TOK_IF || tok.type == TOK_WHILE)
+		stmt = parse_ifwhile(parser);
 	else if (tok.type == TOK_ELSE) stmt = parse_else(parser);
 	else if (tok.type == TOK_PRINT_INT) stmt = parse_temp_print_int(parser);
 	else if (is_type(tok) && next_token(parser).type == TOK_IDENTIFIER)
@@ -229,7 +231,7 @@ Node *parse_idents(Parser *parser) {
 	Token tok = current_token(parser);
 	if (next_token(parser).type == TOK_ASSIGN) return parse_assign(parser);
 	Node *identifier = create_mulnode(tok);
-			next(parser);
+	next(parser);
 	return identifier;
 }
 
@@ -397,8 +399,11 @@ void parser_error(char *message, Token tok) {
 	exit(1);
 }
 
-void print_ast(Node *root, const char *prefix, int is_left, int is_root) {
-	if (root == NULL) return;
+/* Prints the given AST, Receives the root node, a prefix used in the printing
+ * algorithm (it should be ab empty string), set a 0 to the 'is_left' and
+ * finally set as true 'is_root'.
+ * */
+void print_helper(Node *root, const char *prefix, int is_left, int is_root) {
 	char new_prefix[1024];
 
 	if (!is_root) {
@@ -406,22 +411,32 @@ void print_ast(Node *root, const char *prefix, int is_left, int is_root) {
 		printf("%s", is_left ? "├─ " : "└─ ");
 		strcpy(new_prefix, prefix);
 		strcat(new_prefix, is_left ? "│  " : "   ");
-	} else new_prefix[0] = '\0';
+	} else {
+		new_prefix[0] = '\0';
+	}
 
 	if (root->token.type == TOK_MAIN) printf(".\n");
 	else if (root->token.lexeme == NULL) printf("null\n");
 	else printf("%s\n", root->token.lexeme);
 
 	if (root->type == NT_BINARY) {
-		print_ast(root->left, new_prefix, 1, 0);
-		print_ast(root->right, new_prefix, 0, 0);
+		print_helper(root->left, new_prefix, 1, 0);
+		print_helper(root->right, new_prefix, 0, 0);
 	} else {
 		int not_final = 1;
 		for (int i = 0; i < root->child_count; i++) {
 			if (i == root->child_count - 1) not_final = 0;
-			print_ast(root->children[i], new_prefix, not_final, 0);
+			print_helper(root->children[i], new_prefix, not_final, 0);
 		}
 	}
+}
+
+void print_ast(Node *root) {
+	if (LOG_DEBUG < LOG_LEVEL) return;
+	log_debug("Print AST");
+	if (root == NULL) return;
+	print_helper(root, "", 0, 1);
+	printf("\n");
 }
 
 void free_ast(Node *root) {

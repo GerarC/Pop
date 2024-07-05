@@ -6,26 +6,26 @@
 /* Enum with all the kinds of tokens
  * */
 typedef enum _token_type_e {
-	TOK_IDENTIFIER,  // Variables
-	TOK_INT,	   // Integer
-	TOK_FLOAT,	   // Float
-	TOK_IMAGINARY, // Imaginary
-	TOK_STR,	   // Str
-	TOK_BOOL,	   // Booleans
-	TOK_ELN,	   // EndLine
-	TOK_MAIN,	   // Root of the file
-	TOK_EOF,	   // End of File
-				   // Comparators
-	TOK_NOT,	   // ! not
-	TOK_GT,		   // >
-	TOK_GEQT,	   // >=
-	TOK_LT,		   // <
-	TOK_LEQT,	   // <=
-	TOK_EQUAL,	   // ==
-	TOK_DIFF,	   // ==
-	TOK_OR,		   //  || or
-	TOK_AND,	   // && and
-	TOK_XOR,	   // ^ xor
+	TOK_IDENTIFIER, // Variables
+	TOK_INT,		// Integer
+	TOK_FLOAT,		// Float
+	TOK_IMAGINARY,	// Imaginary
+	TOK_STR,		// Str
+	TOK_BOOL,		// Booleans
+	TOK_ELN,		// EndLine
+	TOK_MAIN,		// Root of the file
+	TOK_EOF,		// End of File
+					// Comparators
+	TOK_NOT,		// ! not
+	TOK_GT,			// >
+	TOK_GEQT,		// >=
+	TOK_LT,			// <
+	TOK_LEQT,		// <=
+	TOK_EQUAL,		// ==
+	TOK_DIFF,		// ==
+	TOK_OR,			//  || or
+	TOK_AND,		// && and
+	TOK_XOR,		// ^ xor
 	// Assignment
 	TOK_PLUS_PLUS,	 // ++
 	TOK_MINUS_MINUS, // --
@@ -64,11 +64,11 @@ typedef enum _token_type_e {
 	TOK_RBRACE, // ]
 	TOK_LANGLE, // <
 	TOK_RANGLE, // >
-    // separators
-	TOK_COMMA, // ,
-    // TYPES
-    TOK_INTTYPE,
-    TOK_BOOLTYPE,
+				// separators
+	TOK_COMMA,	// ,
+	// TYPES
+	TOK_INTTYPE,
+	TOK_BOOLTYPE,
 
 	TOK_PRINT_INT,
 	// Invalid
@@ -95,7 +95,7 @@ typedef struct _token_t {
 /* Create a new token with the most important information
  * */
 void create_token(Token *token, TokenType type, TokenLocation loc, int length,
-				  char *text, void *value);
+				  char *lexeme, void *value);
 
 /* Takes a token a return a string representation
  * */

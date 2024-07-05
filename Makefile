@@ -26,24 +26,22 @@ compile: $(objs)
 	$(out)$(target) $(objs) $(flags) $(libs)
 
 ex%:
-	@printf "\n\e[48;5;87m\e[38;5;0m    COMPILATION:    \e[0m \n"
-	@$(target) -c ./examples/$@.pop -o $@.asm
-	@nasm $@.asm -felf64 -o $@.o && ld $@.o -o $@
+	@printf "\n\e[48;5;137m\e[38;5;0m    COMPILATION:    \e[0m \n"
+	@$(target) -c ./examples/$@.pop -o $@.asm --debug
 	@printf "\n\e[48;5;88m    ASSEMBLER CODE:    \e[0m\n"
 	@cat -n $@.asm
+	@nasm $@.asm -felf64 -o $@.o && ld $@.o -o $@
 	@printf "\n\e[48;5;129m\e[38;5;0m    ORIGINAL CODE:    \e[0m \n"
 	@cat -n ./examples/$@.pop
-	@printf "\n\e[48;5;136m\e[38;5;0m    EXECUTION:    \e[0m\n"
+	@printf "\n\e[48;5;136m\e[38;5;0m    EXECUTION:    \e[0m\n\t"
 	@./$@
 	@rm ./$@*
-
 
 clean:
 		@rm $(objs)
 
 debug:
 	gcc -g $(src)* -o $(target)_d
-
 
 run: 
 	$(target)

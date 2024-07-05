@@ -89,15 +89,18 @@ and I know that center of deploy to windows will make me have headaches.
 
 If you want to explore what this language can do, you can compile the examples.
 There are some examples:
+
 - 01-math_expr
 - 02-if_else
 - 03-variables
 - 04-while
-    
+
 To compile and explore these examples use the next command:
-~~~ bash
+
+```bash
 make ex<example_name>
-~~~
+```
+
 for example `make ex03-variables`
 
 ## Milestones
@@ -112,7 +115,7 @@ for example `make ex03-variables`
 - [ ] Functions
 - [ ] Turing-complete (Can emulate itself)
 - [ ] Read and write files
-- [ ] python-like import system 
+- [ ] python-like import system
 - [ ] Structs
 - [ ] Classes
 - [ ] Self-hosted (when the classes are done)
@@ -140,6 +143,7 @@ These are some of the resources I used:
   > This is a great discoverage, The project is basically the same. When I don't know how to implement something I go to this repository to stole ideas and learn how to do things.
 - [Assembler Directives](https://docs.oracle.com/cd/E19253-01/817-5477/eoiyg/index.html)
   > Used basically to know how does work the `.comm` directive.
+- [Color terminal](https://askubuntu.com/questions/558280/changing-colour-of-text-and-background-of-terminal)
 
 ## Thanks
 
