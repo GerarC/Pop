@@ -5,16 +5,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-static Scope *scope;
+Scope *semantic_scope;
 const char *compare_types(Node *a, Node *b);
 void statement_analysis(Node *stmt);
+void declaration_analysis(Node *declaration);
+void assignment_analysis(Node *assignment);
 void if_while_analysis(Node *ifwh);
 void else_analysis(Node *else_s);
 void expression_analysis(Node *expr);
 void binaryop_analysis(Node *binary);
 void unitary_analysis(Node *unit);
 void literal_analysis(Node *lit);
-
 
 void temp_print_int_analysis(Node *lit);
 
@@ -36,7 +37,7 @@ void typing_error(char *message, Node *a, Node *b) {
 
 void semantic_analysis(Node *ast) {
 	log_info("Semantic Analysis starts");
-	scope = create_global_scope();
+	semantic_scope = create_global_scope();
 
 	if (ast->token.type == TOK_MAIN)
 		for (int i = 0; i < ast->child_count; i++) {
@@ -44,7 +45,7 @@ void semantic_analysis(Node *ast) {
 		}
 	else semantic_error("There is not entry point", ast);
 
-	exit_scope(scope);
+	exit_scope(semantic_scope);
 	log_info("Semantic Analysis ends");
 }
 
@@ -57,14 +58,25 @@ const char *compare_types(Node *a, Node *b) {
 		if (strcmp(b_type, "int") == 0 || strcmp(b_type, "float") == 0)
 			return "float";
 		else typing_error("Not compatible types", a, b);
-	} else semantic_error("Unexpected error", a);
+	} else typing_error("Some one is null (a | b)", a, b);
 	return NULL;
 }
 
 void statement_analysis(Node *stmt) {
 	switch (stmt->token.type) {
 		// Expressions
-		case TOK_SYMBOL:
+		case TOK_IDENTIFIER:
+		case TOK_INTTYPE:
+		case TOK_BOOLTYPE:
+			if (stmt->token.type == TOK_IDENTIFIER && stmt->child_count == 0)
+				expression_analysis(stmt);
+			else declaration_analysis(stmt);
+			break;
+
+		case TOK_ASSIGN:
+			assignment_analysis(stmt);
+			break;
+
 		case TOK_INT:
 		case TOK_FLOAT:
 		case TOK_IMAGINARY:
@@ -113,15 +125,54 @@ void statement_analysis(Node *stmt) {
 	}
 }
 
+void declaration_analysis(Node *declaration) {
+	const char *type = declaration->token.lexeme;
+	/* TODO: there must be a function that take the lexeme of the declaration
+	 * and seek in the scope to know if the type exists.
+	 * */
+	for (int i = 0; i < declaration->child_count; i++) {
+		Node *child = declaration->children[i];
+		if (child->type == NT_MULTICHILDREN && child->child_count == 0) {
+			if (add_symbol(semantic_scope, type, child->token.lexeme) != 0)
+				semantic_error("Type doesn't exist", declaration);
+			strncpy(declaration->children[i]->sem_type, type, MAX_SYMBOL_SIZE);
+		} else {
+			if (add_symbol(semantic_scope, type, child->left->token.lexeme))
+				semantic_error("Type doesn't exist", declaration);
+			strncpy(declaration->children[i]->left->sem_type, type,
+					MAX_SYMBOL_SIZE);
+			assignment_analysis(child);
+		}
+	}
+}
+
+void assignment_analysis(Node *assignment) {
+
+	if (assignment->right->token.type == TOK_ASSIGN) {
+		assignment_analysis(assignment->right);
+	} else if (assignment->right->token.type != TOK_INT &&
+			   assignment->right->token.type != TOK_BOOL &&
+			   assignment->right->token.type != TOK_IDENTIFIER)
+		expression_analysis(assignment->right);
+	else literal_analysis(assignment->right);
+
+	const char *type =
+		find_symbol(semantic_scope, assignment->left->token.lexeme);
+	strncpy(assignment->left->sem_type, type, MAX_SYMBOL_SIZE);
+
+	type = compare_types(assignment->left, assignment->right);
+	strncpy(assignment->sem_type, type, MAX_SYMBOL_SIZE);
+}
+
 void if_while_analysis(Node *ifwh) {
-	scope = enter_scope(scope);
+	semantic_scope = enter_scope(semantic_scope);
 	Token tok = ifwh->token;
 	if (tok.type == TOK_IF) {
 		expression_analysis(ifwh->children[0]);
 		for (int i = 1; i < ifwh->child_count; i++)
 			statement_analysis(ifwh->children[i]);
 	}
-	scope = exit_scope(scope);
+	semantic_scope = exit_scope(semantic_scope);
 }
 
 void else_analysis(Node *else_s) {
@@ -153,7 +204,7 @@ void expression_analysis(Node *expr) {
 			unitary_analysis(expr);
 			break;
 
-		case TOK_SYMBOL:
+		case TOK_IDENTIFIER:
 		case TOK_INT:
 		case TOK_FLOAT:
 		case TOK_IMAGINARY:
@@ -198,6 +249,7 @@ void unitary_analysis(Node *unit) {
 }
 
 void literal_analysis(Node *lit) {
+	const char *type = NULL;
 	switch (lit->token.type) {
 
 		case TOK_INT:
@@ -216,15 +268,19 @@ void literal_analysis(Node *lit) {
 			strncpy(lit->sem_type, "bool", MAX_SYMBOL_SIZE);
 			break;
 
+		case TOK_IDENTIFIER:
+			type = find_symbol(semantic_scope, lit->token.lexeme);
+			strncpy(lit->sem_type, type, MAX_SYMBOL_SIZE);
+			break;
+
 		case TOK_IMAGINARY:
-		case TOK_SYMBOL:
 		default:
 			semantic_error("Unknown type", lit);
 			break;
 	}
 }
 
-void temp_print_int_analysis(Node *print_int){
+void temp_print_int_analysis(Node *print_int) {
 	Token tok = print_int->token;
 	expression_analysis(print_int->children[0]);
 }

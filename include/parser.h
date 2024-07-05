@@ -27,6 +27,7 @@ typedef struct _node_t {
 	Node **children;
     /*Type for the semantic analysis*/
     char sem_type[MAX_SYMBOL_SIZE];
+    int capacity;
 } Node;
 
 /* Struct that points tokens and helps in the syntax analysis labor
@@ -51,6 +52,7 @@ Node *parse_program(Parser *parser);
  * finally set as true 'is_root'.
  * */
 void print_ast(Node *root, const char *prefix, int is_left, int is_root);
+
 
 /* Frees an AST by its root token
  * */

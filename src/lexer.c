@@ -268,19 +268,21 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 				tok_type = TOK_ELSE;
 			else if (compare_reserved(&curr, "while", &lex, &col))
 				tok_type = TOK_WHILE;
-			else if (compare_reserved(&curr, "new", &lex, &col))
-				tok_type = TOK_NEW;
+			else if (compare_reserved(&curr, "int", &lex, &col))
+				tok_type = TOK_INTTYPE;
+			else if (compare_reserved(&curr, "int", &lex, &col))
+				tok_type = TOK_BOOLTYPE;
 			else if (compare_reserved(&curr, "print_int", &lex, &col))
 				tok_type = TOK_PRINT_INT;
-			else tok_type = TOK_SYMBOL;
+			else tok_type = TOK_IDENTIFIER;
 
 			if ((isalpha(*curr) || isdigit(*curr) || *curr == '_') &&
-				tok_type != TOK_SYMBOL) {
-				tok_type = TOK_SYMBOL;
+				tok_type != TOK_IDENTIFIER) {
+				tok_type = TOK_IDENTIFIER;
 				free(lex);
 			}
 
-			if (tok_type == TOK_SYMBOL) {
+			if (tok_type == TOK_IDENTIFIER) {
 				while (isalpha(*curr) || isdigit(*curr) || *curr == '_') {
 					curr++;
 					col++;
@@ -293,6 +295,19 @@ Token *lex_program(const char *source, const char *program, int *lexer_len) {
 
 			create_token(&(tokens[token_count - 1]), tok_type, loc, strlen(lex),
 						 lex, NULL);
+		} else if (*curr == ',') {
+			curr++;
+			col++;
+			tok_type = TOK_COMMA;
+
+			int len = curr - start;
+			char *lex = (char *)malloc(sizeof(char) * len + 1);
+			strncpy(lex, start, len);
+			lex[len] = '\0';
+
+			create_token(&(tokens[token_count - 1]), tok_type, loc,
+						 curr - start, lex, NULL);
+
 		} else if (isspace(*curr)) {
 			while (isspace(*curr)) {
 				curr++;

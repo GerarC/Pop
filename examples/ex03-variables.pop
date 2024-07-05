@@ -1,0 +1,24 @@
+// Declaration
+int a, b
+int c
+int e = 45, d = 6
+
+// Assignment
+a = 105
+b = 4
+c = 60 + 9
+
+
+// Result
+print_int(c)
+print_int(a*b)
+
+a = a + 5
+print_int(a)
+
+if(a){
+    int hl = 111
+    print_int(hl * d)
+}
+
+

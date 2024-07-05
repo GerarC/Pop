@@ -10,9 +10,10 @@ int add_symbol(Scope *scope, const char *type, const char *symbol) {
 	TableEntry curr_entry;
 	// Find the type
 	while (current != NULL) {
-		for (type_idx = 0; type_idx < scope->table.count; type_idx++) {
-			curr_entry = scope->table.entries[type_idx];
+		for (type_idx = 0; type_idx < current->table.count; type_idx++) {
+			curr_entry = current->table.entries[type_idx];
 			// Outs of the loop if type is found
+
 			if (strcmp(curr_entry.type, type) == 0) goto out_add_loop;
 		}
 		current = current->parent;
@@ -20,6 +21,7 @@ int add_symbol(Scope *scope, const char *type, const char *symbol) {
 
 	// As all scopes have been iterated and no one owns the type,
 	// so it doesn't exist.
+	log_fatal("The type doesn't exist");
 	return -1;
 out_add_loop:
 
@@ -31,15 +33,21 @@ out_add_loop:
 
 	// Type exists but the current scope doesn't have any symbol of it
 	if (scope != current) type_idx = add_entry(scope, type);
-	if (type_idx == -2) return -4;
+	if (type_idx == -2) {
+		log_error("Entry is full");
+		return -4;
+	}
 
 	// Add the symbol to the table
 	int symbol_num = scope->table.entries[type_idx].count;
 	if (symbol_num < MAX_ENTRY_SYMBOLS) {
 		// type_idx must be the correct because if the scope doesn't have it,
 		// add_entry returns it, in the other hand it's already set by the loop
-		strncpy(scope->table.entries[type_idx].symbols[symbol_num].name, symbol, MAX_SYMBOL_SIZE);
-		assert(strcmp(scope->table.entries[type_idx].symbols[symbol_num].name, symbol) == 0 && "ERROR: types are different");
+		strncpy(scope->table.entries[type_idx].symbols[symbol_num].name, symbol,
+				MAX_SYMBOL_SIZE);
+		assert(strcmp(scope->table.entries[type_idx].symbols[symbol_num].name,
+					  symbol) == 0 &&
+			   "ERROR: types are different");
 		scope->table.entries[type_idx].count++;
 		return 0;
 	} else return -3;
@@ -103,13 +111,14 @@ const char *find_symbol(Scope *scope, const char *symbol) {
 	TableEntry curr_entry;
 	int symbol_num;
 	while (current != NULL) {
-		curr_table = scope->table;
-		for (int i = 0; i < scope->table.count; i++) {
+		curr_table = current->table;
+		for (int i = 0; i < current->table.count; i++) {
 			curr_entry = curr_table.entries[i];
 			symbol_num = curr_entry.count;
 			for (int j = 0; j < symbol_num; j++) {
 				Symbol sym = curr_entry.symbols[j];
-				if (strcmp(symbol, sym.name) == 0) return symbol;
+				if (strcmp(symbol, sym.name) == 0)
+					return current->table.entries[i].type;
 			}
 		}
 		current = current->parent;

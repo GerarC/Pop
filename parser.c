@@ -98,8 +98,6 @@ Node *create_mulnode(Token tok) {
 	node->child_count = 0;
 	node->capacity = 1;
 	node->children = (Node **)malloc(sizeof(Node *));
-	node->left = NULL;
-	node->right = NULL;
 	return node;
 }
 
@@ -123,9 +121,9 @@ void add_child(Node *parent, Node *child) {
 	if (child == NULL) parser_error("Child of %s must exists", child->token);
 
 	if (parent->child_count >= parent->capacity) {
-		parent->capacity *= 2;
-		parent->children = (Node **)realloc(parent->children,
-											sizeof(Node *) * parent->capacity);
+		parent->child_count *= 2;
+		parent->children = (Node **)realloc(
+			parent->children, sizeof(Node *) * parent->child_count);
 	}
 	parent->children[parent->child_count] = child;
 	parent->child_count++;
@@ -207,6 +205,7 @@ Node *parse_statement(Parser *parser) {
 }
 
 Node *parse_declaration(Parser *parser) {
+	log_trace("declaration");
 	Token tok = current_token(parser);
 	Node *declaration = create_mulnode(tok);
 	Node *current = NULL;
@@ -216,10 +215,8 @@ Node *parse_declaration(Parser *parser) {
 		current = parse_idents(parser);
 		if (current != NULL) {
 			add_child(declaration, current);
+			next(parser);
 		} else parser_error("Error parsing declaration of %s", tok);
-		if (current_token(parser).type == TOK_COMMA) next(parser);
-		else if (current_token(parser).type != TOK_ELN)
-			parser_error("There must be a comma", current_token(parser));
 	}
 
 	return declaration;
@@ -229,23 +226,13 @@ Node *parse_idents(Parser *parser) {
 	Token tok = current_token(parser);
 	if (next_token(parser).type == TOK_ASSIGN) return parse_assign(parser);
 	Node *identifier = create_mulnode(tok);
-			next(parser);
 	return identifier;
 }
 
 Node *parse_assign(Parser *parser) {
-	Node *left = NULL;
+	Node *left = parse_literal(parser);
 	Token tok = current_token(parser);
-	if (next_token(parser).type != TOK_ELN &&
-		next_token(parser).type != TOK_COMMA &&
-		next_token(parser).type != TOK_ASSIGN)
-		left = parse_expression(parser);
-	else left = create_mulnode(tok);
-	next(parser);
-
-	tok = current_token(parser);
 	Node *assign = NULL;
-
 	while (tok.type == TOK_ASSIGN) {
 		next(parser);
 		assign = create_binnode(tok, left, parse_assign(parser));
@@ -273,7 +260,9 @@ Node *parse_if(Parser *parser) {
 		add_child(if_stmt, current);
 	}
 
+	int count = if_stmt->child_count;
 	get_block_statements(parser, &if_stmt);
+	if_stmt->child_count = count;
 
 	return if_stmt;
 }
@@ -425,16 +414,14 @@ void print_ast(Node *root, const char *prefix, int is_left, int is_root) {
 }
 
 void free_ast(Node *root) {
-	if (root == NULL) return;
+
 	if (root->right != NULL) free_ast(root->right);
 	if (root->left != NULL) free_ast(root->left);
-	if (root->type == NT_MULTICHILDREN && root->child_count > 0) {
+	if (root->type == NT_MULTICHILDREN && root->child_count > 0)
 		for (int i = 0; i < root->child_count; i++) {
 			Node *temp = root->children[i];
 			free_ast(temp);
 		}
-		free(root->children);
-	}
 
 	free(root);
 }
@@ -447,8 +434,10 @@ void get_block_statements(Parser *parser, Node **parent) {
 		while (parser->pos < parser->length &&
 			   current_token(parser).type != TOK_RCURLY) {
 			current = parse_statement(parser);
-			if (current != NULL) add_child(*parent, current);
-			else parser_error("Creating statement", current_token(parser));
+			if (current != NULL) {
+				add_child(*parent, current);
+			} else
+				parser_error("Error creating statement", current_token(parser));
 		}
 
 		if (current_token(parser).type == TOK_RCURLY) next(parser);
@@ -457,13 +446,14 @@ void get_block_statements(Parser *parser, Node **parent) {
 	} else {
 		if (current_token(parser).type == TOK_ELN) next(parser);
 		current = parse_statement(parser);
-		if (current != NULL) add_child(*parent, current);
-		else parser_error("Error creating statement", current_token(parser));
+		if (current != NULL) {
+			add_child(*parent, current);
+		} else parser_error("Error creating statement", current_token(parser));
 	}
 }
 
 Node *parse_temp_print_int(Parser *parser) {
-	// WARNING: This is a temporal function, must and is going to be deleted
+	log_warn("This is a temporal function, must and is going to be deleted");
 	Token tok = current_token(parser);
 	Node *print_stmt = NULL;
 	Node *current = NULL;

@@ -6,7 +6,7 @@
 /* Enum with all the kinds of tokens
  * */
 typedef enum _token_type_e {
-	TOK_SYMBOL,	   // Variables
+	TOK_IDENTIFIER,  // Variables
 	TOK_INT,	   // Integer
 	TOK_FLOAT,	   // Float
 	TOK_IMAGINARY, // Imaginary
@@ -40,7 +40,7 @@ typedef enum _token_type_e {
 	TOK_SLASH,	// /
 	TOK_STAR,	// * and pointers
 	TOK_MOD,	// %
-	TOK_BINNOT,	   // ! not
+	TOK_BINNOT, // ! not
 	TOK_BINOR,	//  |
 	TOK_BINAND, // &
 	TOK_BINXOR, // ^
@@ -64,9 +64,13 @@ typedef enum _token_type_e {
 	TOK_RBRACE, // ]
 	TOK_LANGLE, // <
 	TOK_RANGLE, // >
+    // separators
+	TOK_COMMA, // ,
+    // TYPES
+    TOK_INTTYPE,
+    TOK_BOOLTYPE,
 
-
-    TOK_PRINT_INT,
+	TOK_PRINT_INT,
 	// Invalid
 	TOK_INVALID
 } TokenType;

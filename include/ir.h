@@ -26,6 +26,9 @@ typedef enum {
 
 	IR_ENDBLOCK,
 
+	IR_DECLARATION,
+	IR_ASSIGNMENT,
+
 	IR_TEMP_PRINT_INT,
 } IrOperationType;
 
@@ -33,6 +36,7 @@ typedef enum {
 	IRVAL_INT,
 	IRVAL_FLOAT,
 	IRVAL_ADDRESS,
+	IRVAL_IDENTIFIER,
 } IrValueType;
 
 typedef struct _ir_value_t {
@@ -41,6 +45,7 @@ typedef struct _ir_value_t {
 		int ival;
 		float fval;
 		size index;
+        char ident[MAX_SYMBOL_SIZE];
 	} data;
 } IrValue;
 

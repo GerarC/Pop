@@ -61,12 +61,24 @@ char *token_string(Token tok) {
 			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[1];
 			break;
 
-		case TOK_SYMBOL:
-			token_type = strdup("Symbol");
+		case TOK_IDENTIFIER:
+			token_type = strdup("Identifier");
+			break;
+
+		case TOK_INTTYPE:
+			token_type = strdup("int");
+			break;
+
+		case TOK_BOOLTYPE:
+			token_type = strdup("bool");
 			break;
 
 		case TOK_BOOL:
 			token_type = strdup("Boolean");
+			break;
+
+		case TOK_COMMA:
+			token_type = strdup("comma");
 			break;
 
 		case TOK_EQUAL:
@@ -119,7 +131,7 @@ char *token_string(Token tok) {
 			break;
 
 		default:
-			log_warn("\tToken %i THIS SHOULD BE UNREACHEABLE", tok.type);
+			log_warn("Token %i THIS SHOULD BE UNREACHEABLE", tok.type);
 			token_type = strdup("NOT IMPLEMENTED");
 			break;
 	}

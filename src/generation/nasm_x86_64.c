@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 // Registers stuff begin
 const char *registers[4] = {"r8", "r9", "r10", "r11"};
 char asm_line[MAX_ASM_LINE_SIZE];
@@ -29,7 +28,7 @@ static int allocate_register() {
 
 void deallocate_register(size index) {
 	if (free_reg[index] != 0) {
-		log_fatal("Error freeing register");
+		log_fatal("Error deallocating register");
 		exit(1);
 	}
 	free_reg[index] = 1;
@@ -106,16 +105,20 @@ void generate_footer(Assembler *code) {
 }
 
 char *val_string(IrValue value) {
-	char *string_val = (char *)malloc(sizeof(char) * 10);
+	char *string_val = (char *)malloc(sizeof(char) * MAX_SYMBOL_SIZE);
 	switch (value.type) {
 		case IRVAL_INT:
-			snprintf(string_val, 10, "%i", value.data.ival);
+			snprintf(string_val, MAX_SYMBOL_SIZE, "%i", value.data.ival);
 			break;
 		case IRVAL_FLOAT:
-			snprintf(string_val, 10, "%.2f", value.data.fval);
+			snprintf(string_val, MAX_SYMBOL_SIZE, "%.2f", value.data.fval);
 			break;
 		case IRVAL_ADDRESS:
-			snprintf(string_val, 10, ".POP%i", value.data.index);
+			snprintf(string_val, MAX_SYMBOL_SIZE, ".POP%i", value.data.index);
+			break;
+		case IRVAL_IDENTIFIER:
+			snprintf(string_val, MAX_SYMBOL_SIZE, "[%s]", value.data.ident);
+
 			break;
 	}
 	return string_val;
@@ -135,8 +138,15 @@ int load_value(Assembler *code, IntermediateRepresentation *ir, IrValue value) {
 		return r;
 	} else if (value.type == IRVAL_ADDRESS) {
 		return ir->instructions[value.data.index].result.data.index;
+	} else if (value.type == IRVAL_IDENTIFIER) {
+		r = allocate_register();
+		snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tmov\t%s, %s\n", registers[r],
+				 arg);
+		add_line(code, asm_line);
+		free(arg);
+		return r;
 	}
-	log_fatal("Value type NOT IMPLEMENTED");
+	log_fatal("Value %i type NOT IMPLEMENTED", value.type);
 	exit(1);
 }
 
@@ -305,6 +315,33 @@ void generate_unitaryop(Assembler *code, IntermediateRepresentation *ir,
 	}
 }
 
+void generate_glob_decl(Assembler *code, IntermediateRepresentation *ir,
+						int index) {
+    // TODO: Prepare things to do this with any type, not only int
+	IrOperation op = ir->instructions[index];
+	if (op.arg1.type == IRVAL_IDENTIFIER) {
+		snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcommon\t%s 8:8\n",
+				 op.arg1.data.ident);
+		add_line(code, asm_line);
+		return;
+	}
+
+	log_fatal("%i type NOT IMPLEMENTED", op.arg1.type);
+	exit(1);
+}
+
+void generate_assign(Assembler *code, IntermediateRepresentation *ir,
+					 int index) {
+    // FIX: multi assignation if broken, fix that future Gerard.
+    // By the moment a = b = c isn't available
+	IrOperation op = ir->instructions[index];
+	int r = load_value(code, ir, op.arg2);
+	snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tmov\t%s, %s\n",
+			 val_string(op.arg1), registers[r]);
+	deallocate_register(r);
+	add_line(code, asm_line);
+}
+
 void generate_if(Assembler *code, IntermediateRepresentation *ir, int index) {
 	IrOperation op = ir->instructions[index];
 	int arg1 = load_value(code, ir, op.arg1);
@@ -341,7 +378,7 @@ void generate_endblock(Assembler *code, IntermediateRepresentation *ir,
 }
 
 void generate_temp_print_int(Assembler *code, IntermediateRepresentation *ir,
-					   int index){
+							 int index) {
 
 	IrOperation op = ir->instructions[index];
 	int r = load_value(code, ir, op.arg1);
@@ -360,6 +397,13 @@ void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
 		IrOperation op = ir->instructions[i];
 		int arg1, arg2;
 		switch (op.type) {
+			case IR_DECLARATION:
+				generate_glob_decl(code, ir, i);
+				break;
+			case IR_ASSIGNMENT:
+				generate_assign(code, ir, i);
+				break;
+
 			case IR_EQUAL:
 			case IR_DIFF:
 			case IR_GT:
@@ -393,11 +437,6 @@ void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
 
 			case IR_TEMP_PRINT_INT:
 				generate_temp_print_int(code, ir, i);
-				break;
-
-			default:
-				log_fatal("%i OP NOT IMPLEMENTED", op.type);
-				exit(1);
 				break;
 		}
 	}

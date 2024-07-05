@@ -61,6 +61,10 @@ By the moment the steps I've followed to reach the compiler has been:
    |     4 |  /  | (2)  | (3)  |
    |     5 |  -  | (1)  | (4)  |
 
+5. _Generation of code:_
+   Actually this step is so simple when you already has and intermediate representation it's just translate the IR into the asm code of your predilection.
+   Pop is using nasm, but in the future it's also planned implement ARM, MIPS and stuff like that.
+
 ## Compile
 
 ### Linux
@@ -83,7 +87,7 @@ and I know that center of deploy to windows will make me have headaches.
 ## Milestones
 
 - [x] Compiled to native instructions
-- [ ] Variables
+- [x] Variables
 - [ ] Arrays
 - [ ] Chars
 - [ ] Strings
@@ -103,11 +107,18 @@ These are some of the resources I used:
 
 - [Compilers _Principles, Techniques & Tools_](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools)
 - [Porth](https://gitlab.com/tsoding/porth)
+  > The inspiration of this project. Is like a complete different language, but gave me the strength to begin this.
 - [Crafting Interpreters](https://craftinginterpreters.com/)
+  > From here you can take the idea of the Lexer, the grammar and a more useful things. But it's thought by using with an OOP language. It difficults to translate it into C
 - [Semantic Analysis](https://www.youtube.com/watch?v=cC8YRnDGMwI&ab_channel=Dr.SagarkumarBadhiye)
+  > Why and how to make the semantic analysis.
 - [Another example of compiler](https://www.youtube.com/watch?v=-4RmhDy0A2s&list=PLRnI_2_ZWhtA_ZAzEa8uJF8wgGF0HjjEz&ab_channel=CobbCoding)
 - [Intermediate Representation](https://www.youtube.com/watch?v=u2qLQep_Wzw&ab_channel=AnitaR)
+  > A little explanation about how works the three address code for the intermediate representation.
 - [Compiler in C of DoctorWkt](https://github.com/DoctorWkt/acwj)
+  > This is a great discoverage, The project is basically the same. When I don't know how to implement something I go to this repository to stole ideas and learn how to do things.
+- [Assembler Directives](https://docs.oracle.com/cd/E19253-01/817-5477/eoiyg/index.html)
+  > Used basically to know how does work the `.comm` directive.
 
 ## Thanks
 
