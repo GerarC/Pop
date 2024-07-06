@@ -33,7 +33,7 @@ ex%:
 	@nasm $@.asm -felf64 -o $@.o && ld $@.o -o $@
 	@printf "\n\e[48;5;129m\e[38;5;0m    ORIGINAL CODE:    \e[0m \n"
 	@cat -n ./examples/$@.pop
-	@printf "\n\e[48;5;136m\e[38;5;0m    EXECUTION:    \e[0m\n\t"
+	@printf "\n\e[48;5;136m\e[38;5;0m    EXECUTION:    \e[0m\n"
 	@./$@
 	@rm ./$@*
 

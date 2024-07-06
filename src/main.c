@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
 
 	if (argc < 3) print_usage(argv[0]);
 	log_info("Pop compiler");
+    log_warn("%i", 't');
 
 	int compile = 0;
 	int out_file = 0;

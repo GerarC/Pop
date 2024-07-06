@@ -109,10 +109,10 @@ for example `make ex03-variables`
 - [x] Variables
 - [x] Loops
 - [x] Statically typed (Like Typescript)
-- [ ] Arrays
-- [ ] Chars
-- [ ] Strings
+- [x] Chars
 - [ ] Functions
+- [ ] Arrays
+- [ ] Strings
 - [ ] Turing-complete (Can emulate itself)
 - [ ] Read and write files
 - [ ] python-like import system

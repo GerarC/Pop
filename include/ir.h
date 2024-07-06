@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "parser.h"
+#include "symboltable.h"
 
 typedef enum {
 	IR_ADD,
@@ -32,10 +33,12 @@ typedef enum {
 	IR_ASSIGNMENT,
 
 	IR_TEMP_PRINT_INT,
+	IR_TEMP_PRINT_CHAR,
 } IrOperationType;
 
 typedef enum {
 	IRVAL_INT,
+	IRVAL_CHAR,
 	IRVAL_FLOAT,
 	IRVAL_ADDRESS,
 	IRVAL_IDENTIFIER,
@@ -46,6 +49,7 @@ typedef struct _ir_value_t {
 	union Data {
 		int ival;
 		float fval;
+		char cval;
 		size index;
 		char ident[MAX_SYMBOL_SIZE];
 	} data;
@@ -59,6 +63,7 @@ typedef struct _ir_operation_t {
 } IrOperation;
 
 typedef struct _intermediary_representation_t {
+	Scope *scope;
 	IrOperation *instructions;
 	size count;
 	size capacity;

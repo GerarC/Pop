@@ -85,6 +85,7 @@ Node *parse_literal(Parser *parser);
 
 void get_block_statements(Parser *parser, Node **parent);
 Node *parse_temp_print_int(Parser *parser);
+Node *parse_temp_print_char(Parser *parser);
 
 Parser create_parser(Lexer *lex) {
 	Parser parser = {.tokens = lex->tokens, lex->count, 0};
@@ -155,6 +156,7 @@ int is_type(Token tok) {
 	switch (tok.type) {
 		case TOK_INTTYPE:
 		case TOK_BOOLTYPE:
+		case TOK_CHARTYPE:
 		case TOK_IDENTIFIER:
 			return 1;
 
@@ -196,6 +198,7 @@ Node *parse_statement(Parser *parser) {
 		stmt = parse_ifwhile(parser);
 	else if (tok.type == TOK_ELSE) stmt = parse_else(parser);
 	else if (tok.type == TOK_PRINT_INT) stmt = parse_temp_print_int(parser);
+	else if (tok.type == TOK_PRINT_CHAR) stmt = parse_temp_print_char(parser);
 	else if (is_type(tok) && next_token(parser).type == TOK_IDENTIFIER)
 		stmt = parse_declaration(parser);
 	else if (tok.type == TOK_IDENTIFIER &&
@@ -376,7 +379,7 @@ Node *parse_literal(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *lit = NULL;
 	if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_BOOL ||
-		tok.type == TOK_IDENTIFIER) {
+		tok.type == TOK_CHAR || tok.type == TOK_IDENTIFIER) {
 		lit = create_mulnode(tok);
 		next(parser);
 	} else if (tok.type == TOK_LPAREN) {
@@ -478,6 +481,24 @@ void get_block_statements(Parser *parser, Node **parent) {
 }
 
 Node *parse_temp_print_int(Parser *parser) {
+	// WARNING: This is a temporal function, must and is going to be deleted
+	Token tok = current_token(parser);
+	Node *print_stmt = NULL;
+	Node *current = NULL;
+	next(parser);
+	if (current_token(parser).type == TOK_LPAREN) {
+		next(parser);
+		print_stmt = create_mulnode(tok);
+		current = parse_expression(parser);
+
+		if (current_token(parser).type == TOK_RPAREN) next(parser);
+		else parser_error("A ')' expected", current_token(parser));
+		add_child(print_stmt, current);
+	}
+	return print_stmt;
+}
+
+Node *parse_temp_print_char(Parser *parser) {
 	// WARNING: This is a temporal function, must and is going to be deleted
 	Token tok = current_token(parser);
 	Node *print_stmt = NULL;

@@ -8,24 +8,26 @@
 typedef enum _token_type_e {
 	TOK_IDENTIFIER, // Variables
 	TOK_INT,		// Integer
-	TOK_FLOAT,		// Float
-	TOK_IMAGINARY,	// Imaginary
+	TOK_CHAR,		// char
 	TOK_STR,		// Str
 	TOK_BOOL,		// Booleans
+	TOK_FLOAT,		// Float
+	TOK_IMAGINARY,	// Imaginary
 	TOK_ELN,		// EndLine
 	TOK_MAIN,		// Root of the file
 	TOK_EOF,		// End of File
-					// Comparators
-	TOK_NOT,		// ! not
-	TOK_GT,			// >
-	TOK_GEQT,		// >=
-	TOK_LT,			// <
-	TOK_LEQT,		// <=
-	TOK_EQUAL,		// ==
-	TOK_DIFF,		// ==
-	TOK_OR,			//  || or
-	TOK_AND,		// && and
-	TOK_XOR,		// ^ xor
+			 // Comparators
+	TOK_NOT,   // ! not
+	TOK_GT,	   // >
+	TOK_GEQT,  // >=
+	TOK_LT,	   // <
+	TOK_LEQT,  // <=
+	TOK_EQUAL, // ==
+	TOK_DIFF,  // ==
+	TOK_OR,	   //  || or
+	TOK_AND,   // && and
+	TOK_XOR,   // ^ xor
+
 	// Assignment
 	TOK_PLUS_PLUS,	 // ++
 	TOK_MINUS_MINUS, // --
@@ -67,10 +69,13 @@ typedef enum _token_type_e {
 				// separators
 	TOK_COMMA,	// ,
 	// TYPES
-	TOK_INTTYPE,
-	TOK_BOOLTYPE,
+	TOK_INTTYPE,  // 'int'
+	TOK_BOOLTYPE, // 'bool'
+	TOK_CHARTYPE, // 'char'
+	TOK_STRTYPE,  // 'string'
 
 	TOK_PRINT_INT,
+	TOK_PRINT_CHAR,
 	// Invalid
 	TOK_INVALID
 } TokenType;

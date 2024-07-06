@@ -5,33 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-Lexer create_lexer(const char *source) {
-	Lexer lex = {.count = 0,
-				 .capacity = 1,
-				 .tokens = (Token *)malloc(sizeof(Token) * 1)};
-	strlcpy(lex.source, source, MAX_FILE_SIZE);
-
-	return lex;
-}
-
-void add_token(Lexer *lexer, TokenType type, TokenLocation loc, int len,
-			   char *lex, void *val) {
-
-	if (lexer->count >= lexer->capacity) {
-		lexer->capacity *= 2;
-		lexer->tokens =
-			(Token *)realloc(lexer->tokens, sizeof(Token) * lexer->capacity);
-	}
-
-	lexer->tokens[lexer->count].type = type;
-	lexer->tokens[lexer->count].location = loc;
-	lexer->tokens[lexer->count].length = len;
-	lexer->tokens[lexer->count].lexeme = lex;
-	lexer->tokens[lexer->count].value = val;
-
-	lexer->count++;
-}
-
 void lex_program(Lexer *lexer, const char *program) {
 	log_info("Lexical analysis");
 
@@ -276,10 +249,16 @@ void lex_program(Lexer *lexer, const char *program) {
 				tok_type = TOK_WHILE;
 			else if (compare_reserved(&curr, "int", &lex, &col))
 				tok_type = TOK_INTTYPE;
-			else if (compare_reserved(&curr, "int", &lex, &col))
+			else if (compare_reserved(&curr, "bool", &lex, &col))
 				tok_type = TOK_BOOLTYPE;
+			else if (compare_reserved(&curr, "char", &lex, &col))
+				tok_type = TOK_CHARTYPE;
+			else if (compare_reserved(&curr, "string", &lex, &col))
+				tok_type = TOK_STRTYPE;
 			else if (compare_reserved(&curr, "print_int", &lex, &col))
 				tok_type = TOK_PRINT_INT;
+			else if (compare_reserved(&curr, "print_char", &lex, &col))
+				tok_type = TOK_PRINT_CHAR;
 			else tok_type = TOK_IDENTIFIER;
 
 			if ((isalpha(*curr) || isdigit(*curr) || *curr == '_') &&
@@ -301,6 +280,31 @@ void lex_program(Lexer *lexer, const char *program) {
 
 			add_token(lexer, tok_type, loc, strlen(lex), lex, NULL);
 
+		} else if (*curr == '\'') {
+			curr++;
+			col++;
+			tok_type = TOK_CHAR;
+			if (isalpha(*curr)) {
+				start = curr;
+				curr++;
+				col++;
+				if (*curr != '\'') {
+					log_fatal("not a valid char");
+					exit(1);
+				}
+				curr++;
+				col++;
+			} else {
+				log_fatal("not a valid char");
+				exit(1);
+			}
+
+			char *lex = (char *)malloc(sizeof(char) * 2);
+			strncpy(lex, start, 1);
+			lex[1] = '\0';
+
+			add_token(lexer, tok_type, loc, 1, lex, NULL);
+
 		} else if (*curr == ',') {
 			curr++;
 			col++;
@@ -314,7 +318,7 @@ void lex_program(Lexer *lexer, const char *program) {
 			add_token(lexer, tok_type, loc, curr - start, lex, NULL);
 
 		} else if (isspace(*curr)) {
-			while (isspace(*curr)) {
+			while (isspace(*curr) && *curr != '\n') {
 				curr++;
 				col++;
 			}
@@ -357,6 +361,23 @@ int compare_reserved(const char **curr, const char *rword, char **dest,
 	return 1;
 }
 
+void add_token(Lexer *lexer, TokenType type, TokenLocation loc, int len,
+			   char *lex, void *val) {
+	if (lexer->count >= lexer->capacity) {
+		lexer->capacity *= 2;
+		lexer->tokens =
+			(Token *)realloc(lexer->tokens, sizeof(Token) * lexer->capacity);
+	}
+
+	lexer->tokens[lexer->count].type = type;
+	lexer->tokens[lexer->count].location = loc;
+	lexer->tokens[lexer->count].length = len;
+	lexer->tokens[lexer->count].lexeme = lex;
+	lexer->tokens[lexer->count].value = val;
+
+	lexer->count++;
+}
+
 void print_lexer(Lexer *lex) {
 	if (LOG_DEBUG < LOG_LEVEL) return;
 	log_debug("Print lexer:");
@@ -369,4 +390,13 @@ void free_lexer(Lexer lex) {
 		free_token(&lex.tokens[i]);
 	free(lex.tokens);
 	log_info("lexer cleaned");
+}
+
+Lexer create_lexer(const char *source) {
+	Lexer lex = {.count = 0,
+				 .capacity = 1,
+				 .tokens = (Token *)malloc(sizeof(Token) * 1)};
+	strlcpy(lex.source, source, MAX_FILE_SIZE);
+
+	return lex;
 }

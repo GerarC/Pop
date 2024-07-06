@@ -66,11 +66,10 @@ char *token_string(Token tok) {
 			break;
 
 		case TOK_INTTYPE:
-			token_type = strdup("int");
-			break;
-
+		case TOK_STRTYPE:
+		case TOK_CHARTYPE:
 		case TOK_BOOLTYPE:
-			token_type = strdup("bool");
+			token_type = strdup(tok.lexeme);
 			break;
 
 		case TOK_BOOL:

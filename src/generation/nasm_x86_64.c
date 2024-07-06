@@ -4,6 +4,7 @@
 #include "../../include/typedef.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Registers stuff begin
 const char *registers[4] = {"r8", "r9", "r10", "r11"};
@@ -69,6 +70,8 @@ void generate_while(Assembler *code, IntermediateRepresentation *ir, int index);
 
 void generate_temp_print_int(Assembler *code, IntermediateRepresentation *ir,
 							 int index);
+void generate_temp_print_char(Assembler *code, IntermediateRepresentation *ir,
+							  int index);
 
 void generate_operations(Assembler *code, IntermediateRepresentation *ir);
 void generate_header(Assembler *code);
@@ -135,6 +138,13 @@ void generate_operations(Assembler *code, IntermediateRepresentation *ir) {
 			case IR_TEMP_PRINT_INT:
 				generate_temp_print_int(code, ir, i);
 				break;
+			case IR_TEMP_PRINT_CHAR:
+				generate_temp_print_char(code, ir, i);
+				break;
+
+			default:
+				log_fatal("%i OP NOT IMPLEMENTED", op.type);
+				exit(1);
 		}
 	}
 }
@@ -146,7 +156,7 @@ void generate_header(Assembler *code) {
 				   "\tglobal _start\n"
 
 				   // Temporal print
-				   "print:\n"
+				   "print_int:\n"
 				   "\tmov\tr9, -3689348814741910323\n"
 				   "\tsub\trsp, 40\n"
 				   "\tmov\tBYTE [rsp+31], 10\n"
@@ -180,6 +190,16 @@ void generate_header(Assembler *code) {
 				   "\tadd     rsp, 40\n"
 				   "\tret\n\n"
 
+				   "print_char:\n"
+				   "\tpush\trdi\n"
+				   "\tmov\tedi, 1\n"
+				   "\tmov\trax, 1\n"
+				   "\tmov\trsi, rsp\n"
+				   "\tmov\trdx, 1\n"
+				   "\tsyscall\n"
+				   "\tadd\trsp, 8\n"
+				   "\tret\n\n"
+
 				   // Program
 				   "_start:\n"
 				   "\tpush\trbp\n"
@@ -211,6 +231,9 @@ char *val_string(IrValue value) {
 			snprintf(string_val, MAX_SYMBOL_SIZE, "[%s]", value.data.ident);
 
 			break;
+		case IRVAL_CHAR:
+			snprintf(string_val, MAX_SYMBOL_SIZE, "%X", value.data.ival);
+			break;
 	}
 	return string_val;
 }
@@ -220,12 +243,13 @@ int load_value(Assembler *code, IntermediateRepresentation *ir, IrValue value) {
 	char *arg = val_string(value);
 	int r;
 
-	if (value.type == IRVAL_INT) {
+	if (value.type == IRVAL_INT || value.type == IRVAL_CHAR) {
 		r = allocate_register();
 		snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tmov\t%s, %s\n", registers[r],
 				 arg);
 		add_line(code, asm_line);
 		free(arg);
+		log_info("enters");
 		return r;
 	} else if (value.type == IRVAL_ADDRESS) {
 		return ir->instructions[value.data.index].result.data.index;
@@ -411,9 +435,20 @@ void generate_glob_decl(Assembler *code, IntermediateRepresentation *ir,
 	// TODO: Prepare things to do this with any type, not only int
 	IrOperation op = ir->instructions[index];
 	if (op.arg1.type == IRVAL_IDENTIFIER) {
-		snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcommon\t%s 8:8\n",
-				 op.arg1.data.ident);
-		add_line(code, asm_line);
+		const char *type = find_symbol(ir->scope, op.arg1.data.ident);
+		if (strcmp(type, "int")) {
+			snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcommon\t%s 8:8\n",
+					 op.arg1.data.ident);
+			add_line(code, asm_line);
+		} else if (strcmp(type, "char")) {
+			snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcommon\t%s 1:1\n",
+					 op.arg1.data.ident);
+			add_line(code, asm_line);
+		} else if (strcmp(type, "bool")) {
+			snprintf(asm_line, MAX_ASM_LINE_SIZE, "\tcommon\t%s 1:1\n",
+					 op.arg1.data.ident);
+			add_line(code, asm_line);
+		}
 		return;
 	}
 
@@ -493,7 +528,19 @@ void generate_temp_print_int(Assembler *code, IntermediateRepresentation *ir,
 	int r = load_value(code, ir, op.arg1);
 	snprintf(asm_line, MAX_ASM_LINE_SIZE,
 			 "\tmov\trdi, %s\n"
-			 "\tcall\tprint\n",
+			 "\tcall\tprint_int\n",
+			 registers[r]);
+	add_line(code, asm_line);
+	deallocate_register(r);
+}
+
+void generate_temp_print_char(Assembler *code, IntermediateRepresentation *ir,
+							  int index) {
+	IrOperation op = ir->instructions[index];
+	int r = load_value(code, ir, op.arg1);
+	snprintf(asm_line, MAX_ASM_LINE_SIZE,
+			 "\tmov\trdi, %s\n"
+			 "\tcall\tprint_char\n",
 			 registers[r]);
 	add_line(code, asm_line);
 	deallocate_register(r);

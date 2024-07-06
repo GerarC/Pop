@@ -1,0 +1,28 @@
+char b = 'H'
+print_char(b)
+b = 'e'
+print_char(b)
+b = 'l'
+print_char(b)
+print_char(b)
+b = 'o'
+print_char(b)
+print_char(32)
+b = 'W'
+print_char(b)
+b = 'o'
+print_char(b)
+b = 'r'
+print_char(b)
+b = 'l'
+print_char(b)
+b = 'd'
+print_char(b)
+print_char(10)
+
+int index = 65
+while(index < 123){
+    print_char(index)
+    index = index + 1
+}
+print_char(10)

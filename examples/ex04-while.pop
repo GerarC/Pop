@@ -1,6 +1,5 @@
-int index = 1
-while(index <= 20){
-    print_int(index)
-    index = index + 1
-}
-
+int index = 1    
+while(index <= 20){ 
+    print_int(index) 
+    index = index + 1 
+} 

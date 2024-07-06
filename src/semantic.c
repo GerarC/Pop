@@ -18,6 +18,7 @@ void unitary_analysis(Node *unit);
 void literal_analysis(Node *lit);
 
 void temp_print_int_analysis(Node *lit);
+void temp_print_char_analysis(Node *lit);
 
 void semantic_error(char *message, Node *node) {
 	Token tok = node->token;
@@ -66,6 +67,8 @@ void statement_analysis(Node *stmt) {
 		// Expressions
 		case TOK_IDENTIFIER:
 		case TOK_INTTYPE:
+		case TOK_CHARTYPE:
+		case TOK_STRTYPE:
 		case TOK_BOOLTYPE:
 			if (stmt->token.type == TOK_IDENTIFIER && stmt->child_count == 0)
 				expression_analysis(stmt);
@@ -117,6 +120,10 @@ void statement_analysis(Node *stmt) {
 
 		case TOK_PRINT_INT:
 			temp_print_int_analysis(stmt);
+			break;
+
+		case TOK_PRINT_CHAR:
+			temp_print_char_analysis(stmt);
 			break;
 
 		default:
@@ -210,6 +217,7 @@ void expression_analysis(Node *expr) {
 		case TOK_IMAGINARY:
 		case TOK_STR:
 		case TOK_BOOL:
+		case TOK_CHAR:
 			literal_analysis(expr);
 			break;
 
@@ -264,6 +272,10 @@ void literal_analysis(Node *lit) {
 			strncpy(lit->sem_type, "string", MAX_SYMBOL_SIZE);
 			break;
 
+		case TOK_CHAR:
+			strncpy(lit->sem_type, "char", MAX_SYMBOL_SIZE);
+			break;
+
 		case TOK_BOOL:
 			strncpy(lit->sem_type, "bool", MAX_SYMBOL_SIZE);
 			break;
@@ -283,4 +295,9 @@ void literal_analysis(Node *lit) {
 void temp_print_int_analysis(Node *print_int) {
 	Token tok = print_int->token;
 	expression_analysis(print_int->children[0]);
+}
+
+void temp_print_char_analysis(Node *print_char) {
+	Token tok = print_char->token;
+	expression_analysis(print_char->children[0]);
 }
