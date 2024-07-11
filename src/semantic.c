@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+SymbolTable *sem_table = NULL;
+
 const char *compare_types(Node *a, Node *b);
 void statement_analysis(Node *stmt);
 void declaration_analysis(Node *declaration);
@@ -35,15 +37,16 @@ void typing_error(char *message, Node *a, Node *b) {
 	exit(1);
 }
 
-void semantic_analysis(Node *ast) {
+void semantic_analysis(Node *ast, SymbolTable *tbl) {
 	log_info("Semantic Analysis");
+	sem_table = tbl;
+	if (sem_table == NULL) semantic_error("Not semantic table", ast);
 
 	if (ast->token.type == TOK_MAIN)
 		for (int i = 0; i < ast->child_count; i++) {
 			statement_analysis(ast->children[i]);
 		}
 	else semantic_error("There is not entry point", ast);
-
 }
 
 const char *compare_types(Node *a, Node *b) {
@@ -109,7 +112,7 @@ void declaration_analysis(Node *declaration) {
 		if (child->child_count == 0) {
 			strncpy(declaration->children[i]->sem_type, type, MAX_SYMBOL_SIZE);
 		} else {
-				semantic_error("Type doesn't exist", declaration);
+			semantic_error("Type doesn't exist", declaration);
 			strncpy(declaration->children[i]->children[0]->sem_type, type,
 					MAX_SYMBOL_SIZE);
 			assignment_analysis(child);
@@ -128,7 +131,7 @@ void assignment_analysis(Node *assignment) {
 	else literal_analysis(assignment->children[1]);
 
 	const char *type =
-	strncpy(assignment->children[0]->sem_type, type, MAX_SYMBOL_SIZE);
+		strncpy(assignment->children[0]->sem_type, type, MAX_SYMBOL_SIZE);
 
 	type = compare_types(assignment->children[0], assignment->children[1]);
 	strncpy(assignment->sem_type, type, MAX_SYMBOL_SIZE);
@@ -154,7 +157,7 @@ void else_analysis(Node *else_s) {
 void expression_analysis(Node *expr) {
 	switch (expr->type) {
 		case NT_BINARYOP:
-			unitary_analysis(expr);
+			binaryop_analysis(expr);
 			break;
 
 		case NT_UNITARYOP:
@@ -203,6 +206,7 @@ void unitary_analysis(Node *unit) {
 
 void literal_analysis(Node *lit) {
 	const char *type = NULL;
+	int idx_type = -1;
 	switch (lit->token.type) {
 
 		case TOK_INT:
@@ -226,8 +230,10 @@ void literal_analysis(Node *lit) {
 			break;
 
 		case TOK_IDENTIFIER:
-			strncpy(lit->sem_type, type, MAX_SYMBOL_SIZE);
-			break;
+
+			/*         idx_type = find_symbol(sem_table, lit->token.lexeme);*/
+			/*strncpy(lit->sem_type, type, MAX_SYMBOL_SIZE);*/
+			/*break;*/
 
 		case TOK_IMAGINARY:
 		default:

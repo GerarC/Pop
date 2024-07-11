@@ -391,7 +391,7 @@ void while_ir(IntermediateRepresentation *ir, Node *while_s) {
 void expression_ir(IntermediateRepresentation *ir, Node *expr) {
 	switch (expr->type) {
         case NT_BINARYOP:
-			unitary_ir(ir, expr);
+			binaryop_ir(ir, expr);
 			break;
 
 		case NT_UNITARYOP:

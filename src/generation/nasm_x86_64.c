@@ -7,7 +7,7 @@
 #include <string.h>
 
 FILE *dest;
-SymbolTable *table;
+SymbolTable *nasm_table;
 IntermediateRepresentation *ir;
 void generation_error(const char *message, IrOperation *op);
 
@@ -22,12 +22,11 @@ void deallocate_all_registers() {
 }
 
 static int allocate_register() {
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++)
 		if (free_reg[i] == 1) {
 			free_reg[i] = 0;
 			return i;
 		}
-	}
 	generation_error("Not free registers", NULL);
 	return -1;
 }
@@ -38,7 +37,6 @@ void deallocate_register(size index) {
 	free_reg[index] = 1;
 }
 // end registers stuff
-
 char *val_string(IrValue value);
 
 int load_value(IrValue value);
@@ -70,7 +68,7 @@ void generate_while(int index);
 void generate_temp_print_int(int index);
 void generate_temp_print_char(int index);
 
-void generate_operations(IntermediateRepresentation *ir);
+void generate_operations();
 void generate_header();
 void generate_footer();
 
@@ -78,22 +76,22 @@ void generate_nasm_x86_64(const char *destination,
 						  IntermediateRepresentation *inrepr,
 						  SymbolTable *tbl) {
 	dest = fopen(destination, "w");
-	table = tbl;
+	nasm_table = tbl;
 	ir = inrepr;
-	if (table == NULL) generation_error("Symbol table doesn't exists", NULL);
+	if (nasm_table == NULL) generation_error("Symbol table doesn't exists", NULL);
 	if (ir == NULL) generation_error("IR doesn't exists", NULL);
 	if (dest == NULL) generation_error("Cannot create destination file", NULL);
 
 	deallocate_all_registers();
 	generate_header();
 
-	generate_operations(ir);
+	generate_operations();
 
 	generate_footer();
 	fclose(dest);
 }
 
-void generate_operations(IntermediateRepresentation *ir) {
+void generate_operations() {
 	log_info("NASM code generation");
 	size i;
 	for (i = 0; i < ir->count; i++) {
@@ -276,21 +274,18 @@ void move_reg(int r1, int r2) {
 
 int gen_add(int r1, int r2) {
 	fprintf(dest, "\tadd\t%s, %s\n", registers[r1], registers[r2]);
-
 	deallocate_register(r2);
 	return r1;
 }
 
 int gen_sub(int r1, int r2) {
 	fprintf(dest, "\tsub\t%s, %s\n", registers[r1], registers[r2]);
-
 	deallocate_register(r2);
 	return r1;
 }
 
 int gen_mul(int r1, int r2) {
 	fprintf(dest, "\timul\t%s, %s\n", registers[r1], registers[r2]);
-
 	deallocate_register(r2);
 	return r1;
 }
@@ -302,7 +297,6 @@ int gen_div(int r1, int r2) {
 			"\tidiv\t%s\n"
 			"\tmov\t%s, rax\n",
 			registers[r1], registers[r2], registers[r1]);
-
 	deallocate_register(r2);
 	return r1;
 }
@@ -346,7 +340,6 @@ int gen_comparison(int r1, int r2, IrOperationType type) {
 	}
 
 	fprintf(dest, "\tmov\t%s, rcx\n", registers[r1]);
-
 	deallocate_register(r2);
 	return r1;
 }
@@ -386,7 +379,6 @@ void generate_binaryop(int index) {
 
 int gen_bin_not(int r1) {
 	fprintf(dest, "\tNOT %s\n", registers[r1]);
-
 	return r1;
 }
 
@@ -515,10 +507,7 @@ void generate_temp_print_char(int index) {
 }
 
 void generation_error(const char *message, IrOperation *op) {
-	if (op == NULL) {
-		log_fatal(message);
-	} else {
-		log_fatal("%s: %i", message, op->type);
-	}
+	if (op == NULL) log_fatal(message);
+	else log_fatal("%s: %i", message, op->type);
 	exit(1);
 }

@@ -10,29 +10,31 @@ void add_symbol(SymbolTable *table, const Symbol symbol) {
 		table->symbols =
 			(Symbol *)realloc(table->symbols, sizeof(Symbol) * table->capacity);
 	}
-    strncpy(table->symbols[table->count].name, symbol.name, MAX_SYMBOL_SIZE);
-    table->symbols[table->count].loc = symbol.loc;
-    table->symbols[table->count].scope = symbol.scope;
-    table->symbols[table->count].dtype = symbol.dtype;
-    table->symbols[table->count].stype = symbol.stype;
-    table->symbols[table->count].attrs = symbol.attrs;
-    table->symbols[table->count].offset = symbol.offset;
-    table->symbols[table->count].members = symbol.members;
-    table->count++;
+	strncpy(table->symbols[table->count].name, symbol.name, MAX_SYMBOL_SIZE);
+	table->symbols[table->count].loc = symbol.loc;
+	table->symbols[table->count].scope = symbol.scope;
+	table->symbols[table->count].dtype = symbol.dtype;
+	table->symbols[table->count].stype = symbol.stype;
+	table->symbols[table->count].attrs = symbol.attrs;
+	table->symbols[table->count].offset = symbol.offset;
+	table->symbols[table->count].members = symbol.members;
+	table->count++;
 }
 
 void remove_symbol(SymbolTable *table, const char *symbol) {
 	log_trace("remove symbol not implemented");
 }
 
-const char *find_symbol(SymbolTable *table, const char *symbol) {
-	log_trace("find symbol not implemented");
-	return NULL;
+int find_symbol(SymbolTable *table, const char *symbol) {
+	for (int i = 0; i < table->count; i++) {
+		if (strcmp(table->symbols[i].name, symbol) == 0) return i;
+	}
+	return -1;
 }
 
 /* Creates and returns the main global scope
  * */
-SymbolTable *create_table(){
+SymbolTable *create_table() {
 	SymbolTable *table = (SymbolTable *)malloc(sizeof(SymbolTable));
 	table->symbols = (Symbol *)malloc(sizeof(Symbol));
 	table->capacity = 1;

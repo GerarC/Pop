@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
 
 	if (compile) {
 		const char *program = read_file(source_file);
+		SymbolTable *table = create_table();
 
 		Lexer lex = create_lexer(source_file);
 		lex_program(&lex, program);
@@ -63,8 +64,7 @@ int main(int argc, char **argv) {
 		Node *ast = parse_program(&parser);
 		if (debug) print_ast(ast);
 
-		SymbolTable *table = create_table();
-		semantic_analysis(ast);
+		semantic_analysis(ast, table);
 
 		IntermediateRepresentation *ir =
 			create_intermediate_representation(ast);

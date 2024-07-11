@@ -69,7 +69,7 @@ void remove_symbol(SymbolTable *table, const char *symbol);
 /* searches a symbol in the scopes. if it finds it returns the symbol
  * otherwise it returns NULL
  * */
-const char *find_symbol(SymbolTable *table, const char *symbol);
+int find_symbol(SymbolTable *table, const char *symbol);
 
 /* Creates and returns the main global scope
  * */
