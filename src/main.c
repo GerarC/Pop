@@ -1,4 +1,3 @@
-#include "../include/asmlines.h"
 #include "../include/file.h"
 #include "../include/generation/nasm_x86_64.h"
 #include "../include/ir.h"
@@ -23,7 +22,7 @@ int main(int argc, char **argv) {
 
 	if (argc < 3) print_usage(argv[0]);
 	log_info("Pop compiler");
-    log_warn("%i", 't');
+	log_warn("%i", 't');
 
 	int compile = 0;
 	int out_file = 0;
@@ -64,20 +63,19 @@ int main(int argc, char **argv) {
 		Node *ast = parse_program(&parser);
 		if (debug) print_ast(ast);
 
+		SymbolTable *table = create_table();
 		semantic_analysis(ast);
 
 		IntermediateRepresentation *ir =
 			create_intermediate_representation(ast);
 		if (debug) print_ir(ir);
 
-		Assembler code = create_assembler();
-		generate_nasm_x86_64(&code, ir);
-		write_file(output_file, &code);
-		free_assembler(code);
+		generate_nasm_x86_64(output_file, ir, table);
 
 		free_intermediate_representation(ir);
 		free_lexer(lex);
 		free_ast(ast);
+		free_symbol_table(table);
 	}
 	return 0;
 }

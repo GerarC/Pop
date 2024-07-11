@@ -143,7 +143,7 @@ char *token_string(Token tok) {
 	return tkn_str;
 }
 
-void create_token(Token *token, TokenType type, TokenLocation loc, int length,
+void create_token(Token *token, TokenType type, SourceLocation loc, int length,
 				  char *text, void *value) {
 	token->type = type;
 	token->location = loc;

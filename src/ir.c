@@ -39,67 +39,39 @@ void program_ir(IntermediateRepresentation *ir, Node *program) {
 }
 
 void statement_ir(IntermediateRepresentation *ir, Node *stmt) {
-	Token tok = stmt->token;
-	switch (tok.type) {
-		case TOK_IDENTIFIER:
-		case TOK_BOOLTYPE:
-		case TOK_INTTYPE:
-		case TOK_CHARTYPE:
-		case TOK_STRTYPE:
+	switch (stmt->type) {
+		case NT_DECLARATION:
 			declaration_ir(ir, stmt);
 			break;
 
-		case TOK_ASSIGN:
+		case NT_ASSIGNMENT:
 			assignment_ir(ir, stmt);
 			break;
 
-		case TOK_IF:
+		case NT_IF:
 			if_ir(ir, stmt);
 			break;
 
-		case TOK_WHILE:
+		case NT_WHILE:
 			while_ir(ir, stmt);
 			break;
 
-		case TOK_ELSE:
+		case NT_ELSE:
 			else_ir(ir, stmt);
 			break;
 
-		case TOK_INT:
-		case TOK_FLOAT:
-		case TOK_IMAGINARY:
-		case TOK_STR:
-		case TOK_BOOL:
+		case NT_LITERAL:
 
-		case TOK_EQUAL:
-		case TOK_DIFF:
-		case TOK_NOT:
-		case TOK_GT:
-		case TOK_GEQT:
-		case TOK_LT:
-		case TOK_LEQT:
-		case TOK_OR:
-
-		case TOK_AND:
-		case TOK_XOR:
-
-		case TOK_PLUS:
-		case TOK_MINUS:
-		case TOK_SLASH:
-		case TOK_STAR:
-		case TOK_MOD:
-		case TOK_BINOR:
-		case TOK_BINAND:
-		case TOK_BINXOR:
-		case TOK_BINNOT:
+        case NT_BINARYOP:
+        case NT_UNITARYOP:
 			expression_ir(ir, stmt);
 			break;
 
-		case TOK_PRINT_INT:
+		case NT_TEMP_PRINT_INT:
 			temp_print_int_ir(ir, stmt);
 			break;
 
-		case TOK_PRINT_CHAR:
+		case NT_TEMP_PRINT_CHAR:
 			temp_print_char_ir(ir, stmt);
 			break;
 
@@ -146,7 +118,6 @@ void print_ir(IntermediateRepresentation *ir) {
 
 		switch (type) {
 			case IR_DECLARATION:
-				data_type = find_symbol(ir->scope, arg1);
 				strcpy(operation, "create");
 				printf("\t%s %s", operation, arg1);
 				break;
@@ -292,7 +263,6 @@ IntermediateRepresentation *create_intermediate_representation(Node *ast) {
 	ir->instructions = (IrOperation *)malloc(sizeof(IrOperation));
 	ir->count = 0;
 	ir->capacity = 1;
-	ir->scope = create_global_scope();
 
 	program_ir(ir, ast);
 
@@ -305,22 +275,17 @@ void declaration_ir(IntermediateRepresentation *ir, Node *declaration) {
 	IrValue arg1 = {IRVAL_IDENTIFIER};
 	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
 	IrOperation op = {.type = IR_DECLARATION, .result = result};
-	add_entry(ir->scope, declaration->sem_type);
 	for (int i = 0; i < declaration->child_count; i++) {
 		Node *child = declaration->children[i];
-		if (child->type == NT_MULTICHILDREN) {
-			add_symbol(ir->scope, declaration->token.lexeme,
-					   child->token.lexeme);
+		if (child->type == NT_LITERAL ||child->type == NT_IDENTIFIER) {
 			strncpy(arg1.data.ident, child->token.lexeme, MAX_SYMBOL_SIZE);
 			arg1 = literal_val(ir, child);
 			op.arg1 = arg1;
 			add_iroperation(ir, op);
 		} else {
-			add_symbol(ir->scope, declaration->token.lexeme,
-					   child->left->token.lexeme);
-			strncpy(arg1.data.ident, child->left->token.lexeme,
+			strncpy(arg1.data.ident, child->children[0]->token.lexeme,
 					MAX_SYMBOL_SIZE);
-			arg1 = literal_val(ir, child->left);
+			arg1 = literal_val(ir, child->children[0]);
 			op.arg1 = arg1;
 			add_iroperation(ir, op);
 			assignment_ir(ir, child);
@@ -330,22 +295,22 @@ void declaration_ir(IntermediateRepresentation *ir, Node *declaration) {
 
 void assignment_ir(IntermediateRepresentation *ir, Node *assignment) {
 	IrValue arg2;
-	if (assignment->right->token.type == TOK_ASSIGN) {
-		assignment_ir(ir, assignment->right);
+	if (assignment->children[1]->token.type == TOK_ASSIGN) {
+		assignment_ir(ir, assignment->children[1]);
 		arg2.type = IRVAL_ADDRESS;
 		arg2.data.index = ir->count - 1;
-	} else if (assignment->right->token.type != TOK_INT &&
-			   assignment->right->token.type != TOK_BOOL &&
-			   assignment->right->token.type != TOK_CHAR &&
-			   assignment->right->token.type != TOK_STR &&
-			   assignment->right->token.type != TOK_IDENTIFIER) {
-		expression_ir(ir, assignment->right);
+	} else if (assignment->children[1]->token.type != TOK_INT &&
+			   assignment->children[1]->token.type != TOK_BOOL &&
+			   assignment->children[1]->token.type != TOK_CHAR &&
+			   assignment->children[1]->token.type != TOK_STR &&
+			   assignment->children[1]->token.type != TOK_IDENTIFIER) {
+		expression_ir(ir, assignment->children[1]);
 		arg2.type = IRVAL_ADDRESS;
 		arg2.data.index = ir->count - 1;
-	} else arg2 = literal_val(ir, assignment->right);
+	} else arg2 = literal_val(ir, assignment->children[1]);
 
-	Node *destination = assignment->left;
-	IrValue arg1 = literal_val(ir, assignment->left);
+	Node *destination = assignment->children[0];
+	IrValue arg1 = literal_val(ir, assignment->children[0]);
 	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
 	IrOperation op = {IR_ASSIGNMENT, arg1, arg2, result};
 	add_iroperation(ir, op);
@@ -424,35 +389,16 @@ void while_ir(IntermediateRepresentation *ir, Node *while_s) {
 }
 
 void expression_ir(IntermediateRepresentation *ir, Node *expr) {
-	Token tok = expr->token;
-	switch (tok.type) {
-		case TOK_EQUAL:
-		case TOK_DIFF:
-		case TOK_GT:
-		case TOK_GEQT:
-		case TOK_LT:
-		case TOK_LEQT:
-
-		case TOK_PLUS:
-		case TOK_MINUS:
-		case TOK_SLASH:
-		case TOK_STAR:
-			if (expr->type == NT_BINARY) binaryop_ir(ir, expr);
-			else unitary_ir(ir, expr);
-			break;
-
-		case TOK_NOT:
-		case TOK_BINNOT:
+	switch (expr->type) {
+        case NT_BINARYOP:
 			unitary_ir(ir, expr);
 			break;
 
-		case TOK_IDENTIFIER:
-		case TOK_INT:
-		case TOK_FLOAT:
-		case TOK_IMAGINARY:
-		case TOK_STR:
-		case TOK_CHAR:
-		case TOK_BOOL:
+		case NT_UNITARYOP:
+			unitary_ir(ir, expr);
+			break;
+
+        case NT_LITERAL:
 			literal_val(ir, expr);
 			break;
 
@@ -503,21 +449,21 @@ void binaryop_ir(IntermediateRepresentation *ir, Node *bin) {
 	IrValue arg1 = {0};
 	IrValue arg2 = {0};
 
-	if (bin->left != NULL) {
-		if (is_literal(bin->left)) {
-			arg1 = literal_val(ir, bin->left);
+	if (bin->children[0] != NULL) {
+		if (is_literal(bin->children[0])) {
+			arg1 = literal_val(ir, bin->children[0]);
 		} else {
-			expression_ir(ir, bin->left);
+			expression_ir(ir, bin->children[0]);
 			arg1.type = IRVAL_ADDRESS;
 			arg1.data.index = ir->count - 1;
 		}
 	}
 
-	if (bin->right != NULL) {
-		if (is_literal(bin->right)) {
-			arg2 = literal_val(ir, bin->right);
+	if (bin->children[1] != NULL) {
+		if (is_literal(bin->children[1])) {
+			arg2 = literal_val(ir, bin->children[1]);
 		} else {
-			expression_ir(ir, bin->right);
+			expression_ir(ir, bin->children[1]);
 			arg2.type = IRVAL_ADDRESS;
 			arg2.data.index = ir->count - 1;
 		}
@@ -594,8 +540,6 @@ IrValue literal_val(IntermediateRepresentation *ir, Node *lit) {
 		case TOK_IDENTIFIER:
 			value.type = IRVAL_IDENTIFIER;
 			char *sval = lit->token.lexeme;
-			if (find_symbol(ir->scope, sval) == NULL)
-				ir_error("Symbol doesn't exists", lit);
 			strncpy(value.data.ident, sval, MAX_SYMBOL_SIZE);
 			break;
 

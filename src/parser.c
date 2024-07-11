@@ -4,19 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TODO: CREATE NODE GRAMMAR TYPES IS NEEDED
 /* Returns the current node of the parser
  * */
 Token current_token(Parser *parser);
 
 /* Create a new multinode token and sets its children.
  * */
-Node *create_mulnode(Token tok);
+Node *create_ast_node(Token tok, NodeType type);
 
 void add_child(Node *parent, Node *child);
-
-/* Create a binary node and sets its left and right children
- * */
-Node *create_binnode(Token tok, Node *left, Node *right);
 
 void next(Parser *parser);
 
@@ -32,9 +29,11 @@ void parser_error(char *message, Token tok);
  *          | declaration
  *          | assignments
  *          | if_stmt
+ *          | while_stmt
  *
  *
  * declaration -> type idents tok_eln
+ *          | type identifier '(' func_decl (',' func_decl)* ')' block_statement
  * type -> 'int'
  *       | 'bool'
  *       | identifier
@@ -43,10 +42,13 @@ void parser_error(char *message, Token tok);
  * assign -> identifier '=' assign*
  *       | expr tok_eln
  *
- * if_stmt -> 'if' '('expr')' '{'statement+'}' else_stmt tok_eln
- *       | 'if' '('expr')' statement+ tok_eln
- * else_stmt -> else '{'statement+'}' tok_eln
- *       | else statement tok_eln
+ * if_stmt -> 'if' '('expr')' block_statements else_stmt? tok_eln
+ * else_stmt -> else block_statements
+ * while_stmt -> 'while' '('expr')' block_statements
+ *
+ * block_statements -> '{'statement+'}' tok_eln
+ *       | '('expr')' statement tok_eln
+ *
  *
  * expr -> equality
  * equality -> comparison (('=='|'!=') comparison)*
@@ -70,6 +72,8 @@ Node *parse_declaration(Parser *parser);
 Node *parse_type(Parser *parser);
 Node *parse_idents(Parser *parser);
 Node *parse_assign(Parser *parser);
+Node *parse_function_declaration(Parser *parser);
+Node *parse_function_arguments(Parser *parser);
 
 Node *parse_ifwhile(Parser *parser);
 Node *parse_else(Parser *parser);
@@ -92,28 +96,14 @@ Parser create_parser(Lexer *lex) {
 	return parser;
 }
 
-Node *create_mulnode(Token tok) {
+Node *create_ast_node(Token tok, NodeType type) {
 	Node *node;
 	node = (Node *)malloc(sizeof(Node));
 	node->token = tok;
-	node->type = NT_MULTICHILDREN;
 	node->child_count = 0;
 	node->capacity = 1;
 	node->children = (Node **)malloc(sizeof(Node *));
-	node->left = NULL;
-	node->right = NULL;
-	return node;
-}
-
-Node *create_binnode(Token tok, Node *left, Node *right) {
-	Node *node;
-	node = (Node *)malloc(sizeof(Node));
-	node->token = tok;
-	node->type = NT_BINARY;
-	node->left = left;
-	node->right = right;
-	node->child_count = 0;
-	node->capacity = 0;
+	node->type = type;
 	return node;
 }
 
@@ -174,7 +164,7 @@ Node *parse_program(Parser *parser) {
 	Token tok = {TOK_MAIN, parser->tokens[0].location, 1, "main .", NULL};
 
 	Node *current = NULL;
-	Node *statements = create_mulnode(tok);
+	Node *statements = create_ast_node(tok, NT_MAIN);
 
 	while (parser->pos < parser->length &
 		   current_token(parser).type != TOK_EOF) {
@@ -199,6 +189,9 @@ Node *parse_statement(Parser *parser) {
 	else if (tok.type == TOK_ELSE) stmt = parse_else(parser);
 	else if (tok.type == TOK_PRINT_INT) stmt = parse_temp_print_int(parser);
 	else if (tok.type == TOK_PRINT_CHAR) stmt = parse_temp_print_char(parser);
+	else if (is_type(tok) && next_token(parser).type == TOK_IDENTIFIER &&
+			 parser->tokens[parser->pos + 2].type == TOK_LPAREN)
+		stmt = parse_function_declaration(parser);
 	else if (is_type(tok) && next_token(parser).type == TOK_IDENTIFIER)
 		stmt = parse_declaration(parser);
 	else if (tok.type == TOK_IDENTIFIER &&
@@ -213,9 +206,8 @@ Node *parse_statement(Parser *parser) {
 
 Node *parse_declaration(Parser *parser) {
 	Token tok = current_token(parser);
-	Node *declaration = create_mulnode(tok);
+	Node *declaration = create_ast_node(tok, NT_DECLARATION);
 	Node *current = NULL;
-	Node **children = NULL;
 	next(parser);
 	while (current_token(parser).type != TOK_ELN) {
 		current = parse_idents(parser);
@@ -230,22 +222,46 @@ Node *parse_declaration(Parser *parser) {
 	return declaration;
 }
 
+Node *parse_function_declaration(Parser *parser) {
+	Token tok = current_token(parser);
+	Node *declaration = create_ast_node(tok, NT_FUNC_DECLARATION);
+	Node *current = NULL;
+	next(parser);
+	Node *func_name = parse_literal(parser);
+	if (func_name != NULL) add_child(declaration, func_name);
+	if (current_token(parser).type == TOK_LPAREN) {}
+	while (current_token(parser).type != TOK_ELN) {
+		current = parse_idents(parser);
+		if (current != NULL) {
+			add_child(declaration, current);
+		} else parser_error("Error parsing declaration of %s", tok);
+		if (current_token(parser).type == TOK_COMMA) next(parser);
+		else if (current_token(parser).type != TOK_ELN)
+			parser_error("There must be a comma", current_token(parser));
+	}
+
+	return declaration;
+}
+
+Node *parse_function_arguments(Parser *parser);
+
 Node *parse_idents(Parser *parser) {
 	Token tok = current_token(parser);
 	if (next_token(parser).type == TOK_ASSIGN) return parse_assign(parser);
-	Node *identifier = create_mulnode(tok);
+	Node *identifier = create_ast_node(tok, NT_IDENTIFIER);
 	next(parser);
 	return identifier;
 }
 
 Node *parse_assign(Parser *parser) {
 	Node *left = NULL;
+	Node *right = NULL;
 	Token tok = current_token(parser);
 	if (next_token(parser).type != TOK_ELN &&
 		next_token(parser).type != TOK_COMMA &&
 		next_token(parser).type != TOK_ASSIGN)
 		left = parse_expression(parser);
-	else left = create_mulnode(tok);
+	else left = create_ast_node(tok, NT_IDENTIFIER);
 	next(parser);
 
 	tok = current_token(parser);
@@ -253,7 +269,11 @@ Node *parse_assign(Parser *parser) {
 
 	while (tok.type == TOK_ASSIGN) {
 		next(parser);
-		assign = create_binnode(tok, left, parse_assign(parser));
+		assign = create_ast_node(tok, NT_ASSIGNMENT);
+		add_child(assign, left);
+		right = parse_assign(parser);
+		if (right != NULL) add_child(assign, left);
+		else parser_error("Error creating right child", tok);
 		left = assign;
 		tok = current_token(parser);
 	}
@@ -269,7 +289,7 @@ Node *parse_ifwhile(Parser *parser) {
 	next(parser);
 	if (current_token(parser).type == TOK_LPAREN) {
 		next(parser);
-		if_stmt = create_mulnode(tok);
+		if_stmt = create_ast_node(tok, NT_IF);
 		current = parse_expression(parser);
 
 		if (current_token(parser).type == TOK_RPAREN) next(parser);
@@ -286,9 +306,8 @@ Node *parse_ifwhile(Parser *parser) {
 Node *parse_else(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *else_stmt = NULL;
-	Node **children = NULL;
 
-	else_stmt = create_mulnode(tok);
+	else_stmt = create_ast_node(tok, NT_ELSE);
 
 	next(parser);
 	get_block_statements(parser, &else_stmt);
@@ -302,9 +321,16 @@ Node *parse_equality(Parser *parser) {
 	Node *left = parse_comparison(parser);
 	Token tok = current_token(parser);
 	Node *equal = NULL;
+	Node *right = NULL;
 	while (tok.type == TOK_EQUAL || tok.type == TOK_DIFF) {
 		next(parser);
-		equal = create_binnode(tok, left, parse_comparison(parser));
+
+		equal = create_ast_node(tok, NT_BINARYOP);
+		add_child(equal, left);
+		right = parse_comparison(parser);
+		if (right != NULL) add_child(equal, right);
+		else parser_error("Error creating right child", tok);
+
 		left = equal;
 		tok = current_token(parser);
 	}
@@ -317,11 +343,18 @@ Node *parse_comparison(Parser *parser) {
 	Node *left = parse_term(parser);
 	Token tok = current_token(parser);
 	Node *comp = NULL;
+	Node *right = NULL;
 
 	while (tok.type == TOK_LT || tok.type == TOK_LEQT || tok.type == TOK_GT ||
 		   tok.type == TOK_GEQT) {
 		next(parser);
-		comp = create_binnode(tok, left, parse_term(parser));
+
+		comp = create_ast_node(tok, NT_BINARYOP);
+		add_child(comp, left);
+		right = parse_term(parser);
+		if (right != NULL) add_child(comp, right);
+		else parser_error("Error creating right child", tok);
+
 		left = comp;
 		tok = current_token(parser);
 	}
@@ -333,9 +366,17 @@ Node *parse_term(Parser *parser) {
 	Node *left = parse_factor(parser);
 	Token tok = current_token(parser);
 	Node *term = NULL;
+	Node *right = NULL;
+
 	while (tok.type == TOK_PLUS || tok.type == TOK_MINUS) {
 		next(parser);
-		term = create_binnode(tok, left, parse_factor(parser));
+
+		term = create_ast_node(tok, NT_BINARYOP);
+		add_child(term, left);
+		right = parse_factor(parser);
+		if (right != NULL) add_child(term, right);
+		else parser_error("Error creating right child", tok);
+
 		left = term;
 		tok = current_token(parser);
 	}
@@ -347,13 +388,18 @@ Node *parse_factor(Parser *parser) {
 	Node *left = parse_unary(parser);
 	Token tok = current_token(parser);
 	Node *fact = NULL;
-	int enters_loop = 0;
+	Node *right = NULL;
 	while (tok.type == TOK_SLASH || tok.type == TOK_STAR) {
 		next(parser);
-		fact = create_binnode(tok, left, parse_unary(parser));
+
+		fact = create_ast_node(tok, NT_BINARYOP);
+		add_child(fact, left);
+		right = parse_unary(parser);
+		if (right != NULL) add_child(fact, right);
+		else parser_error("Error creating right child", tok);
+
 		left = fact;
 		tok = current_token(parser);
-		enters_loop = 1;
 	}
 	if (fact == NULL) return left;
 	return fact;
@@ -365,8 +411,7 @@ Node *parse_unary(Parser *parser) {
 	if (tok.type == TOK_MINUS || tok.type == TOK_NOT ||
 		tok.type == TOK_BINNOT) {
 		next(parser);
-		unary = create_mulnode(tok);
-		unary->children = (Node **)malloc(sizeof(Node *));
+		unary = create_ast_node(tok, NT_UNITARYOP);
 		add_child(unary, parse_expression(parser));
 	} else {
 		return parse_literal(parser);
@@ -380,7 +425,7 @@ Node *parse_literal(Parser *parser) {
 	Node *lit = NULL;
 	if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_BOOL ||
 		tok.type == TOK_CHAR || tok.type == TOK_IDENTIFIER) {
-		lit = create_mulnode(tok);
+		lit = create_ast_node(tok, NT_LITERAL);
 		next(parser);
 	} else if (tok.type == TOK_LPAREN) {
 		next(parser);
@@ -408,6 +453,7 @@ void parser_error(char *message, Token tok) {
  * */
 void print_helper(Node *root, const char *prefix, int is_left, int is_root) {
 	char new_prefix[1024];
+	int not_final = 1;
 
 	if (!is_root) {
 		printf("%s", prefix);
@@ -422,15 +468,9 @@ void print_helper(Node *root, const char *prefix, int is_left, int is_root) {
 	else if (root->token.lexeme == NULL) printf("null\n");
 	else printf("%s\n", root->token.lexeme);
 
-	if (root->type == NT_BINARY) {
-		print_helper(root->left, new_prefix, 1, 0);
-		print_helper(root->right, new_prefix, 0, 0);
-	} else {
-		int not_final = 1;
-		for (int i = 0; i < root->child_count; i++) {
-			if (i == root->child_count - 1) not_final = 0;
-			print_helper(root->children[i], new_prefix, not_final, 0);
-		}
+	for (int i = 0; i < root->child_count; i++) {
+		if (i == root->child_count - 1) not_final = 0;
+		print_helper(root->children[i], new_prefix, not_final, 0);
 	}
 }
 
@@ -443,16 +483,13 @@ void print_ast(Node *root) {
 }
 
 void free_ast(Node *root) {
+	log_debug("free ast");
 	if (root == NULL) return;
-	if (root->right != NULL) free_ast(root->right);
-	if (root->left != NULL) free_ast(root->left);
-	if (root->type == NT_MULTICHILDREN && root->child_count > 0) {
-		for (int i = 0; i < root->child_count; i++) {
-			Node *temp = root->children[i];
-			free_ast(temp);
-		}
-		free(root->children);
+	for (int i = 0; i < root->child_count; i++) {
+		Node *temp = root->children[i];
+		if (temp != NULL) free_ast(temp);
 	}
+	/*free(root->children);*/
 
 	free(root);
 }
@@ -488,7 +525,7 @@ Node *parse_temp_print_int(Parser *parser) {
 	next(parser);
 	if (current_token(parser).type == TOK_LPAREN) {
 		next(parser);
-		print_stmt = create_mulnode(tok);
+		print_stmt = create_ast_node(tok, NT_TEMP_PRINT_INT);
 		current = parse_expression(parser);
 
 		if (current_token(parser).type == TOK_RPAREN) next(parser);
@@ -506,7 +543,7 @@ Node *parse_temp_print_char(Parser *parser) {
 	next(parser);
 	if (current_token(parser).type == TOK_LPAREN) {
 		next(parser);
-		print_stmt = create_mulnode(tok);
+		print_stmt = create_ast_node(tok, NT_TEMP_PRINT_CHAR);
 		current = parse_expression(parser);
 
 		if (current_token(parser).type == TOK_RPAREN) next(parser);

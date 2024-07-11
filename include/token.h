@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include "config.h"
+#include "common.h"
 
 /* Enum with all the kinds of tokens
  * */
@@ -80,18 +81,11 @@ typedef enum _token_type_e {
 	TOK_INVALID
 } TokenType;
 
-/* Structure that saves the exact location of a token in the file
- * */
-typedef struct _token_location_t {
-	int line, col;
-	char file[MAX_FILENAME_SIZE];
-} TokenLocation;
-
 /* Token structure represents a piece of code in its most important information
  * */
 typedef struct _token_t {
 	TokenType type;
-	TokenLocation location;
+	SourceLocation location;
 	int length;
 	char *lexeme;
 	void *value;
@@ -99,7 +93,7 @@ typedef struct _token_t {
 
 /* Create a new token with the most important information
  * */
-void create_token(Token *token, TokenType type, TokenLocation loc, int length,
+void create_token(Token *token, TokenType type, SourceLocation loc, int length,
 				  char *lexeme, void *value);
 
 /* Takes a token a return a string representation

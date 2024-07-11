@@ -13,7 +13,7 @@ void lex_program(Lexer *lexer, const char *program) {
 	const char *start;
 
 	TokenType tok_type;
-	TokenLocation loc = {0};
+	SourceLocation loc = {0};
 	strlcpy(loc.file, lexer->source, MAX_FILENAME_SIZE);
 	int col = 0;
 
@@ -361,7 +361,7 @@ int compare_reserved(const char **curr, const char *rword, char **dest,
 	return 1;
 }
 
-void add_token(Lexer *lexer, TokenType type, TokenLocation loc, int len,
+void add_token(Lexer *lexer, TokenType type, SourceLocation loc, int len,
 			   char *lex, void *val) {
 	if (lexer->count >= lexer->capacity) {
 		lexer->capacity *= 2;

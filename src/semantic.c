@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-Scope *semantic_scope;
 const char *compare_types(Node *a, Node *b);
 void statement_analysis(Node *stmt);
 void declaration_analysis(Node *declaration);
@@ -38,7 +37,6 @@ void typing_error(char *message, Node *a, Node *b) {
 
 void semantic_analysis(Node *ast) {
 	log_info("Semantic Analysis");
-	semantic_scope = create_global_scope();
 
 	if (ast->token.type == TOK_MAIN)
 		for (int i = 0; i < ast->child_count; i++) {
@@ -46,7 +44,6 @@ void semantic_analysis(Node *ast) {
 		}
 	else semantic_error("There is not entry point", ast);
 
-	exit_scope(semantic_scope);
 }
 
 const char *compare_types(Node *a, Node *b) {
@@ -63,66 +60,36 @@ const char *compare_types(Node *a, Node *b) {
 }
 
 void statement_analysis(Node *stmt) {
-	switch (stmt->token.type) {
+	switch (stmt->type) {
 		// Expressions
-		case TOK_IDENTIFIER:
-		case TOK_INTTYPE:
-		case TOK_CHARTYPE:
-		case TOK_STRTYPE:
-		case TOK_BOOLTYPE:
-			if (stmt->token.type == TOK_IDENTIFIER && stmt->child_count == 0)
-				expression_analysis(stmt);
-			else declaration_analysis(stmt);
+		case NT_DECLARATION:
+			declaration_analysis(stmt);
 			break;
 
-		case TOK_ASSIGN:
+		case NT_ASSIGNMENT:
 			assignment_analysis(stmt);
 			break;
 
-		case TOK_INT:
-		case TOK_FLOAT:
-		case TOK_IMAGINARY:
-		case TOK_STR:
-		case TOK_BOOL:
-
-		case TOK_EQUAL:
-		case TOK_DIFF:
-		case TOK_NOT:
-		case TOK_GT:
-		case TOK_GEQT:
-		case TOK_LT:
-		case TOK_LEQT:
-		case TOK_OR:
-
-		case TOK_AND:
-		case TOK_XOR:
-
-		case TOK_PLUS:
-		case TOK_MINUS:
-		case TOK_SLASH:
-		case TOK_STAR:
-		case TOK_MOD:
-		case TOK_BINOR:
-		case TOK_BINAND:
-		case TOK_BINXOR:
-		case TOK_BINNOT:
+		case NT_LITERAL:
+		case NT_BINARYOP:
+		case NT_UNITARYOP:
 			expression_analysis(stmt);
 			break;
 
-		case TOK_IF:
-		case TOK_WHILE:
+		case NT_IF:
+		case NT_WHILE:
 			ifwhile_analysis(stmt);
 			break;
 
-		case TOK_ELSE:
+		case NT_ELSE:
 			else_analysis(stmt);
 			break;
 
-		case TOK_PRINT_INT:
+		case NT_TEMP_PRINT_INT:
 			temp_print_int_analysis(stmt);
 			break;
 
-		case TOK_PRINT_CHAR:
+		case NT_TEMP_PRINT_CHAR:
 			temp_print_char_analysis(stmt);
 			break;
 
@@ -139,14 +106,11 @@ void declaration_analysis(Node *declaration) {
 	 * */
 	for (int i = 0; i < declaration->child_count; i++) {
 		Node *child = declaration->children[i];
-		if (child->type == NT_MULTICHILDREN && child->child_count == 0) {
-			if (add_symbol(semantic_scope, type, child->token.lexeme) != 0)
-				semantic_error("Type doesn't exist", declaration);
+		if (child->child_count == 0) {
 			strncpy(declaration->children[i]->sem_type, type, MAX_SYMBOL_SIZE);
 		} else {
-			if (add_symbol(semantic_scope, type, child->left->token.lexeme))
 				semantic_error("Type doesn't exist", declaration);
-			strncpy(declaration->children[i]->left->sem_type, type,
+			strncpy(declaration->children[i]->children[0]->sem_type, type,
 					MAX_SYMBOL_SIZE);
 			assignment_analysis(child);
 		}
@@ -155,31 +119,28 @@ void declaration_analysis(Node *declaration) {
 
 void assignment_analysis(Node *assignment) {
 
-	if (assignment->right->token.type == TOK_ASSIGN) {
-		assignment_analysis(assignment->right);
-	} else if (assignment->right->token.type != TOK_INT &&
-			   assignment->right->token.type != TOK_BOOL &&
-			   assignment->right->token.type != TOK_IDENTIFIER)
-		expression_analysis(assignment->right);
-	else literal_analysis(assignment->right);
+	if (assignment->children[1]->token.type == TOK_ASSIGN) {
+		assignment_analysis(assignment->children[1]);
+	} else if (assignment->children[1]->token.type != TOK_INT &&
+			   assignment->children[1]->token.type != TOK_BOOL &&
+			   assignment->children[1]->token.type != TOK_IDENTIFIER)
+		expression_analysis(assignment->children[1]);
+	else literal_analysis(assignment->children[1]);
 
 	const char *type =
-		find_symbol(semantic_scope, assignment->left->token.lexeme);
-	strncpy(assignment->left->sem_type, type, MAX_SYMBOL_SIZE);
+	strncpy(assignment->children[0]->sem_type, type, MAX_SYMBOL_SIZE);
 
-	type = compare_types(assignment->left, assignment->right);
+	type = compare_types(assignment->children[0], assignment->children[1]);
 	strncpy(assignment->sem_type, type, MAX_SYMBOL_SIZE);
 }
 
 void ifwhile_analysis(Node *ifwh) {
-	semantic_scope = enter_scope(semantic_scope);
 	Token tok = ifwh->token;
 	if (tok.type == TOK_IF) {
 		expression_analysis(ifwh->children[0]);
 		for (int i = 1; i < ifwh->child_count; i++)
 			statement_analysis(ifwh->children[i]);
 	}
-	semantic_scope = exit_scope(semantic_scope);
 }
 
 void else_analysis(Node *else_s) {
@@ -191,33 +152,16 @@ void else_analysis(Node *else_s) {
 }
 
 void expression_analysis(Node *expr) {
-	switch (expr->token.type) {
-		case TOK_EQUAL:
-		case TOK_DIFF:
-		case TOK_GT:
-		case TOK_GEQT:
-		case TOK_LT:
-		case TOK_LEQT:
-		case TOK_PLUS:
-		case TOK_MINUS:
-		case TOK_SLASH:
-		case TOK_STAR:
-			if (expr->type == NT_BINARY) binaryop_analysis(expr);
-			else unitary_analysis(expr);
-			break;
-
-		case TOK_NOT:
-		case TOK_BINNOT:
+	switch (expr->type) {
+		case NT_BINARYOP:
 			unitary_analysis(expr);
 			break;
 
-		case TOK_IDENTIFIER:
-		case TOK_INT:
-		case TOK_FLOAT:
-		case TOK_IMAGINARY:
-		case TOK_STR:
-		case TOK_BOOL:
-		case TOK_CHAR:
+		case NT_UNITARYOP:
+			unitary_analysis(expr);
+			break;
+
+		case NT_LITERAL:
 			literal_analysis(expr);
 			break;
 
@@ -228,10 +172,11 @@ void expression_analysis(Node *expr) {
 
 void binaryop_analysis(Node *binary) {
 	if (binary == NULL) return;
-	expression_analysis(binary->left);
-	expression_analysis(binary->right);
-	if (binary->left != NULL && binary->right != NULL) {
-		const char *type = compare_types(binary->left, binary->right);
+	expression_analysis(binary->children[0]);
+	expression_analysis(binary->children[1]);
+	if (binary->children[0] != NULL && binary->children[1] != NULL) {
+		const char *type =
+			compare_types(binary->children[0], binary->children[1]);
 		switch (binary->token.type) {
 			case TOK_EQUAL:
 			case TOK_DIFF:
@@ -281,7 +226,6 @@ void literal_analysis(Node *lit) {
 			break;
 
 		case TOK_IDENTIFIER:
-			type = find_symbol(semantic_scope, lit->token.lexeme);
 			strncpy(lit->sem_type, type, MAX_SYMBOL_SIZE);
 			break;
 

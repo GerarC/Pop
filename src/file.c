@@ -28,11 +28,3 @@ char *read_file(const char *source) {
 
 	return buffer;
 }
-
-void write_file(const char *destination, Assembler *code) {
-	FILE *dest = fopen(destination, "w");
-	if (!dest) file_error("file doesn't exists", destination);
-	for (int i = 0; i < code->count; i++)
-		fputs(code->lines[i], dest);
-	fclose(dest);
-}

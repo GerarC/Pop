@@ -63,7 +63,6 @@ typedef struct _ir_operation_t {
 } IrOperation;
 
 typedef struct _intermediary_representation_t {
-	Scope *scope;
 	IrOperation *instructions;
 	size count;
 	size capacity;

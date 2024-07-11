@@ -13,9 +13,9 @@ objs=$(src)ir.o \
 	 $(src)main.o  \
 	 $(src)token.o  \
 	 $(src)lexer.o	 \
-	 $(src)parser.o   \
-	 $(src)semantic.o  \
-	 $(src)asmlines.o   \
+	 $(src)common.o   \
+	 $(src)parser.o    \
+	 $(src)semantic.o   \
 	 $(src)symboltable.o \
 	 $(src)generation/nasm_x86_64.o \
 
