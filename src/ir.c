@@ -272,22 +272,19 @@ IntermediateRepresentation *create_intermediate_representation(Node *ast) {
 }
 
 void declaration_ir(IntermediateRepresentation *ir, Node *declaration) {
-	IrValue arg1 = {IRVAL_IDENTIFIER};
 	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
 	IrOperation op = {.type = IR_DECLARATION, .result = result};
 	for (int i = 0; i < declaration->child_count; i++) {
 		Node *child = declaration->children[i];
 		if (child->type == NT_LITERAL ||child->type == NT_IDENTIFIER) {
-			strncpy(arg1.data.ident, child->token.lexeme, MAX_SYMBOL_SIZE);
-			arg1 = literal_val(ir, child);
-			op.arg1 = arg1;
+			op.arg1 = literal_val(ir, child);
+			strncpy(op.arg1.data.ident, child->token.lexeme, MAX_SYMBOL_SIZE);
 			add_iroperation(ir, op);
 		} else {
-			strncpy(arg1.data.ident, child->children[0]->token.lexeme,
+			op.arg1 = literal_val(ir, child->children[0]);
+			strncpy(op.arg1.data.ident, child->children[0]->token.lexeme,
 					MAX_SYMBOL_SIZE);
-			arg1 = literal_val(ir, child->children[0]);
-			op.arg1 = arg1;
-			add_iroperation(ir, op);
+            add_iroperation(ir, op);
 			assignment_ir(ir, child);
 		}
 	}

@@ -107,21 +107,25 @@ void declaration_analysis(Node *declaration) {
 	/* TODO: there must be a function that take the lexeme of the declaration
 	 * and seek in the scope to know if the type exists.
 	 * */
+	Symbol sym;
 	for (int i = 0; i < declaration->child_count; i++) {
 		Node *child = declaration->children[i];
 		if (child->child_count == 0) {
 			strncpy(declaration->children[i]->sem_type, type, MAX_SYMBOL_SIZE);
+			sym = create_symbol(child);
+			add_symbol(sem_table, sym);
+
 		} else {
-			semantic_error("Type doesn't exist", declaration);
 			strncpy(declaration->children[i]->children[0]->sem_type, type,
 					MAX_SYMBOL_SIZE);
+			sym = create_symbol(child->children[0]);
+			add_symbol(sem_table, sym);
 			assignment_analysis(child);
 		}
 	}
 }
 
 void assignment_analysis(Node *assignment) {
-
 	if (assignment->children[1]->token.type == TOK_ASSIGN) {
 		assignment_analysis(assignment->children[1]);
 	} else if (assignment->children[1]->token.type != TOK_INT &&
@@ -130,8 +134,10 @@ void assignment_analysis(Node *assignment) {
 		expression_analysis(assignment->children[1]);
 	else literal_analysis(assignment->children[1]);
 
-	const char *type =
-		strncpy(assignment->children[0]->sem_type, type, MAX_SYMBOL_SIZE);
+	int idx_type =
+		find_symbol(sem_table, assignment->children[0]->token.lexeme);
+	const char *type = find_symbol_type(sem_table, idx_type);
+	strncpy(assignment->children[0]->sem_type, type, MAX_SYMBOL_SIZE);
 
 	type = compare_types(assignment->children[0], assignment->children[1]);
 	strncpy(assignment->sem_type, type, MAX_SYMBOL_SIZE);
@@ -169,6 +175,7 @@ void expression_analysis(Node *expr) {
 			break;
 
 		default:
+            log_error("error token: %s", token_string(expr->token));
 			semantic_error("Unreacheable expression", expr);
 	}
 }
@@ -230,10 +237,10 @@ void literal_analysis(Node *lit) {
 			break;
 
 		case TOK_IDENTIFIER:
-
-			/*         idx_type = find_symbol(sem_table, lit->token.lexeme);*/
-			/*strncpy(lit->sem_type, type, MAX_SYMBOL_SIZE);*/
-			/*break;*/
+			idx_type = find_symbol(sem_table, lit->token.lexeme);
+			type = find_symbol_type(sem_table, idx_type);
+			strncpy(lit->sem_type, type, MAX_SYMBOL_SIZE);
+			break;
 
 		case TOK_IMAGINARY:
 		default:

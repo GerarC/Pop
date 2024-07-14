@@ -1,15 +1,18 @@
 #ifndef SYMBOLTABLE_H
 #define SYMBOLTABLE_H
 
-#include "./common.h"
-#include "./config.h"
-#include "./typedef.h"
+#include "common.h"
+#include "config.h"
+#include "token.h"
+#include "typedef.h"
+#include "parser.h"
 
 typedef enum _data_type_e {
 	DT_INT,
 	DT_FLOAT,
 	DT_LONG,
 	DT_CHAR,
+	DT_BOOL,
 } DataType;
 
 typedef enum _structural_type_e {
@@ -70,6 +73,10 @@ void remove_symbol(SymbolTable *table, const char *symbol);
  * otherwise it returns NULL
  * */
 int find_symbol(SymbolTable *table, const char *symbol);
+
+const char *find_symbol_type(SymbolTable *table, int index);
+
+Symbol create_symbol(Node *node);
 
 /* Creates and returns the main global scope
  * */

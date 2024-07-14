@@ -76,6 +76,10 @@ char *token_string(Token tok) {
 			token_type = strdup("Boolean");
 			break;
 
+		case TOK_CHAR:
+			token_type = strdup("Char");
+			break;
+
 		case TOK_COMMA:
 			token_type = strdup("comma");
 			break;

@@ -78,7 +78,8 @@ void generate_nasm_x86_64(const char *destination,
 	dest = fopen(destination, "w");
 	nasm_table = tbl;
 	ir = inrepr;
-	if (nasm_table == NULL) generation_error("Symbol table doesn't exists", NULL);
+	if (nasm_table == NULL)
+		generation_error("Symbol table doesn't exists", NULL);
 	if (ir == NULL) generation_error("IR doesn't exists", NULL);
 	if (dest == NULL) generation_error("Cannot create destination file", NULL);
 
@@ -252,7 +253,6 @@ int load_value(IrValue value) {
 		fprintf(dest, "\tmov\t%s, %s\n", registers[r], arg);
 
 		free(arg);
-		log_info("enters");
 		return r;
 	} else if (value.type == IRVAL_ADDRESS) {
 		return ir->instructions[value.data.index].result.data.index;
@@ -411,28 +411,27 @@ void generate_glob_decl(int index) {
 	// TODO: Prepare things to do this with any type, not only int
 	IrOperation op = ir->instructions[index];
 	if (op.arg1.type == IRVAL_IDENTIFIER) {
-		/*
-		if (strcmp(type, "int")) {
-			fprintf(dest, "\tcommon\t%s 8:8\n",
-					 op.arg1.data.ident);
+		int idx = find_symbol(nasm_table, op.arg1.data.ident);
+		const char *type = find_symbol_type(nasm_table, idx);
+		if (strcmp(type, "int") == 0) {
+			fprintf(dest, "\tcommon\t%s 8:8\n", op.arg1.data.ident);
 
-		} else if (strcmp(type, "char")) {
-			fprintf(dest, "\tcommon\t%s 1:1\n",
-					 op.arg1.data.ident);
+		} else if (strcmp(type, "char") == 0) {
+			fprintf(dest, "\tcommon\t%s 1:1\n", op.arg1.data.ident);
 
 		} else if (strcmp(type, "bool")) {
-			fprintf(dest, "\tcommon\t%s 1:1\n",
-					 op.arg1.data.ident);
-
+			fprintf(dest, "\tcommon\t%s 1:1\n", op.arg1.data.ident);
 		}
 		return;
-	*/
 	}
-	generation_error("%i OP TYPE NOT IMPLEMENTED", &op);
+	generation_error("OP TYPE NOT IMPLEMENTED", &op);
 }
 
 void generate_assign(int index) {
 	/* FIX: multi assignation if broken. At the moment a = b = c isn't available
+	 *
+	 * TODO: There's a way. Implement a attribute that says if the operatino
+	 * will be used or it will be dropped
 	 * */
 	IrOperation op = ir->instructions[index];
 

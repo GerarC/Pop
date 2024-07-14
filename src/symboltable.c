@@ -32,6 +32,31 @@ int find_symbol(SymbolTable *table, const char *symbol) {
 	return -1;
 }
 
+Symbol create_symbol(Node *node) {
+	Token tok = node->token;
+	ScopeType scope = SC_GLOBAL;
+	DataType dtype = DT_INT;
+	if (strcmp(node->sem_type, "int") == 0 || tok.type == TOK_INT)
+		dtype = DT_INT;
+	else if (strcmp(node->sem_type, "char") == 0 || tok.type == TOK_CHAR == 0)
+		dtype = DT_CHAR;
+	else {
+		log_fatal("%s is not a type: %i", tok.lexeme, tok.type);
+		exit(1);
+	}
+	StructureType stype = ST_VARIABLE;
+	Symbol sym = {.loc = tok.location,
+				  .scope = scope,
+				  .dtype = dtype,
+				  .stype = stype,
+				  .attrs = 1,
+				  .offset = 0,
+				  .members = NULL};
+	strncpy(sym.name, tok.lexeme, MAX_SYMBOL_SIZE);
+
+	return sym;
+}
+
 /* Creates and returns the main global scope
  * */
 SymbolTable *create_table() {
@@ -45,6 +70,39 @@ SymbolTable *create_table() {
 void free_symbol(Symbol *sym) {
 	if (sym == NULL) return;
 	if (sym->members != NULL) free_symbol_table(sym->members);
+}
+
+const char *find_symbol_type(SymbolTable *table, int index) {
+	DataType dtype = table->symbols[index].dtype;
+
+	switch (dtype) {
+		case DT_INT:
+			return "int";
+			break;
+
+		case DT_FLOAT:
+			return "float";
+			break;
+
+		case DT_LONG:
+			return "long";
+			break;
+
+		case DT_CHAR:
+			return "char";
+			break;
+
+		case DT_BOOL:
+			return "bool";
+			break;
+
+		default:
+			log_fatal("%s of not implemented type: %i",
+					  table->symbols[index].name, dtype);
+			exit(1);
+			break;
+	}
+	return NULL;
 }
 
 void free_symbol_table(SymbolTable *table) {

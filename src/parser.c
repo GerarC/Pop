@@ -257,10 +257,16 @@ Node *parse_assign(Parser *parser) {
 	Node *left = NULL;
 	Node *right = NULL;
 	Token tok = current_token(parser);
+	log_info("curr: %s", token_string(tok));
+	log_info("next: %s", token_string(next_token(parser)));
 	if (next_token(parser).type != TOK_ELN &&
 		next_token(parser).type != TOK_COMMA &&
-		next_token(parser).type != TOK_ASSIGN)
+		next_token(parser).type != TOK_ASSIGN) {
 		left = parse_expression(parser);
+	} else if (tok.type == TOK_INT || tok.type == TOK_FLOAT ||
+			   tok.type == TOK_BOOL || tok.type == TOK_CHAR ||
+			   tok.type == TOK_IDENTIFIER)
+		left = create_ast_node(tok, NT_LITERAL);
 	else left = create_ast_node(tok, NT_IDENTIFIER);
 	next(parser);
 
@@ -272,7 +278,7 @@ Node *parse_assign(Parser *parser) {
 		assign = create_ast_node(tok, NT_ASSIGNMENT);
 		add_child(assign, left);
 		right = parse_assign(parser);
-		if (right != NULL) add_child(assign, left);
+		if (right != NULL) add_child(assign, right);
 		else parser_error("Error creating right child", tok);
 		left = assign;
 		tok = current_token(parser);
@@ -284,23 +290,25 @@ Node *parse_assign(Parser *parser) {
 
 Node *parse_ifwhile(Parser *parser) {
 	Token tok = current_token(parser);
-	Node *if_stmt = NULL;
+	Node *stmt = NULL;
 	Node *current = NULL;
 	next(parser);
 	if (current_token(parser).type == TOK_LPAREN) {
 		next(parser);
-		if_stmt = create_ast_node(tok, NT_IF);
+		if (tok.type == TOK_IF) stmt = create_ast_node(tok, NT_IF);
+		else if (tok.type == TOK_WHILE) stmt = create_ast_node(tok, NT_WHILE);
+
 		current = parse_expression(parser);
 
 		if (current_token(parser).type == TOK_RPAREN) next(parser);
 		else parser_error("A ')' expected", current_token(parser));
 
-		add_child(if_stmt, current);
+		add_child(stmt, current);
 	}
 
-	get_block_statements(parser, &if_stmt);
+	get_block_statements(parser, &stmt);
 
-	return if_stmt;
+	return stmt;
 }
 
 Node *parse_else(Parser *parser) {
@@ -429,7 +437,7 @@ Node *parse_literal(Parser *parser) {
 		next(parser);
 	} else if (tok.type == TOK_LPAREN) {
 		next(parser);
-		lit = parse_equality(parser);
+		lit = parse_expression(parser);
 
 		if (current_token(parser).type == TOK_RPAREN) next(parser);
 		else
@@ -483,7 +491,6 @@ void print_ast(Node *root) {
 }
 
 void free_ast(Node *root) {
-	log_debug("free ast");
 	if (root == NULL) return;
 	for (int i = 0; i < root->child_count; i++) {
 		Node *temp = root->children[i];
