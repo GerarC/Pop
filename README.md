@@ -95,6 +95,8 @@ There are some examples:
 - 02-if_else
 - 03-variables
 - 04-while
+- 05-types
+- 06-basic-funct
 
 To compile and explore these examples use the next command:
 
