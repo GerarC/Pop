@@ -120,6 +120,7 @@ void print_ir(IntermediateRepresentation *ir) {
 
 	printf("begin\n");
 	for (size i = 0; i < ir->count; i++) {
+		printf("%i\t", i);
 		IrOperationType type = ir->instructions[i].type;
 		char *arg1 = irval_string(ir->instructions[i].arg1);
 		char *arg2 = irval_string(ir->instructions[i].arg2);
@@ -180,6 +181,10 @@ void print_ir(IntermediateRepresentation *ir) {
 				break;
 			case IR_DIV:
 				strcpy(operation, "/");
+				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
+				break;
+			case IR_MOD:
+				strcpy(operation, "%");
 				printf("\t%s = %s %s %s", result, arg1, operation, arg2);
 				break;
 
@@ -245,6 +250,7 @@ int is_literal(Node *lit) {
 	switch (lit->token.type) {
 		case TOK_IDENTIFIER:
 		case TOK_INT:
+		case TOK_CHAR:
 		case TOK_FLOAT:
 		case TOK_IMAGINARY:
 		case TOK_STR:
@@ -369,6 +375,7 @@ void assignment_ir(IntermediateRepresentation *ir, Node *assignment) {
 	IrValue arg2;
 	if (assignment->children[1]->token.type == TOK_ASSIGN) {
 		assignment_ir(ir, assignment->children[1]);
+		ir->instructions[ir->count - 1].is_used = 1;
 		arg2.type = IRVAL_ADDRESS;
 		arg2.data.index = ir->count - 1;
 	} else if (assignment->children[1]->token.type != TOK_INT &&
@@ -385,6 +392,7 @@ void assignment_ir(IntermediateRepresentation *ir, Node *assignment) {
 	IrValue arg1 = literal_val(ir, assignment->children[0]);
 	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
 	IrOperation op = {IR_ASSIGNMENT, arg1, arg2, result};
+	op.is_used = 0;
 	add_iroperation(ir, op);
 }
 
@@ -498,6 +506,9 @@ void binaryop_ir(IntermediateRepresentation *ir, Node *bin) {
 		case TOK_SLASH:
 			op_type = IR_DIV;
 			break;
+		case TOK_MOD:
+			op_type = IR_MOD;
+			break;
 		case TOK_EQUAL:
 			op_type = IR_EQUAL;
 			break;
@@ -596,7 +607,7 @@ IrValue literal_val(IntermediateRepresentation *ir, Node *lit) {
 			break;
 
 		case TOK_CHAR:
-			value.type = IRVAL_INT;
+			value.type = IRVAL_CHAR;
 			value.data.cval = lit->token.lexeme[0];
 			break;
 		case TOK_FLOAT:
@@ -647,7 +658,8 @@ void cross_reference_builder(IntermediateRepresentation *ir) {
 		} else if (op.type == IR_ENDBLOCK) {
 			size index = stack[--sp];
 			ir->instructions[i].arg1.type = IRVAL_INT;
-			if (ir->instructions[index].type == IR_IF)
+			if (ir->instructions[index].type == IR_IF ||
+				ir->instructions[index].type == IR_ELSE)
 				ir->instructions[index].result.data.index = i;
 			else if (ir->instructions[index].type == IR_DO) {
 				ir->instructions[index].result.data.index = i;

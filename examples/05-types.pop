@@ -1,3 +1,4 @@
+char c
 
 void hello_world(){
     c = 'H'
@@ -9,7 +10,8 @@ void hello_world(){
     print_char(c)
     c = 'o'
     print_char(c)
-    print_char(32)
+    c = ' '
+    print_char(c)
     c = 'W'
     print_char(c)
     c = 'o'
@@ -20,17 +22,15 @@ void hello_world(){
     print_char(c)
     c = 'd'
     print_char(c)
-    print_char(10)
+    print_char('\n')
 }
 
 hello_world()
-char c
 hello_world()
 
-
-int index = 65
-while(index < 123){
-    print_char(index)
-    index = index + 1
+int code = 65
+while(code < 123){
+    print_char(code)
+    code = code + 1
 }
-print_char(10)
+print_char('\n')

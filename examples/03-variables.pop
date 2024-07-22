@@ -1,0 +1,34 @@
+// Declaration
+int a, b
+int c
+int e = 45, d = 6
+
+// Assignment
+a = 105
+b = 4
+c = 60 + 9
+
+
+// Result
+print_int(c)
+print_int(a*b)
+
+a = b = 56
+
+if(a){
+    print_int(a)
+    print_int(d)
+    print_char('(')
+    print_char('a')
+    print_char(',')
+    print_char(' ')
+    print_char('b')
+    print_char(')')
+    print_char(' ')
+    print_char('=')
+    print_char(' ')
+    print_int(b)
+    print_char('\n')
+}
+
+

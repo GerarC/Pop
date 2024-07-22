@@ -262,7 +262,6 @@ Node *parse_function_arguments(Parser *parser) {
 }
 
 Node *parse_function_usage(Parser *parser) {
-	log_trace("enters to the usage");
 	Token tok = current_token(parser);
 	Node *usage = create_ast_node(tok, NT_FUNC_USAGE);
 	Node *current = NULL;
@@ -352,14 +351,20 @@ Node *parse_ifwhile(Parser *parser) {
 }
 
 Node *parse_else(Parser *parser) {
+	int else_if = 0;
 	Token tok = current_token(parser);
 	Node *else_stmt = NULL;
 
 	else_stmt = create_ast_node(tok, NT_ELSE);
 
 	peek(parser);
+	if (current_token(parser).type == TOK_IF) else_if = 1;
 	Node *block = get_block_statements(parser);
 	add_child(else_stmt, block);
+	if (else_if && current_token(parser).type == TOK_ELSE) {
+		Node *elif = parse_else(parser);
+		add_child(block, elif);
+	}
 
 	return else_stmt;
 }
@@ -438,7 +443,8 @@ Node *parse_factor(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *fact = NULL;
 	Node *right = NULL;
-	while (tok.type == TOK_SLASH || tok.type == TOK_STAR) {
+	while (tok.type == TOK_SLASH || tok.type == TOK_STAR ||
+		   tok.type == TOK_MOD) {
 		peek(parser);
 
 		fact = create_ast_node(tok, NT_BINARYOP);

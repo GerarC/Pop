@@ -101,10 +101,12 @@ There are some examples:
 To compile and explore these examples use the next command:
 
 ```bash
-make ex<example_name>
+make ex<example>
 ```
 
-for example `make ex03-variables`
+for example `make ex03` or `make ex03-variables`
+
+## Test
 
 ## Milestones
 

@@ -10,6 +10,7 @@ typedef enum {
 	IR_SUB,
 	IR_MUL,
 	IR_DIV,
+	IR_MOD,
 	IR_UMINUS,
 
 	IR_LT,
@@ -63,6 +64,7 @@ typedef struct _ir_operation_t {
 	IrValue arg1;	// can be null
 	IrValue arg2;	// can be null
 	IrValue result; // can be null
+    int is_used;
 } IrOperation;
 
 typedef struct _intermediary_representation_t {

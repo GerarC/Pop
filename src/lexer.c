@@ -242,7 +242,8 @@ void lex_program(Lexer *lexer, const char *program) {
 			else if (is_reser(&curr, "else", &lex, &col)) tok_type = TOK_ELSE;
 			else if (is_reser(&curr, "while", &lex, &col)) tok_type = TOK_WHILE;
 			else if (is_reser(&curr, "int", &lex, &col)) tok_type = TOK_INTTYPE;
-			else if (is_reser(&curr, "void", &lex, &col)) tok_type = TOK_VOIDTYPE;
+			else if (is_reser(&curr, "void", &lex, &col))
+				tok_type = TOK_VOIDTYPE;
 			else if (is_reser(&curr, "bool", &lex, &col))
 				tok_type = TOK_BOOLTYPE;
 			else if (is_reser(&curr, "char", &lex, &col))
@@ -278,12 +279,28 @@ void lex_program(Lexer *lexer, const char *program) {
 			curr++;
 			col++;
 			tok_type = TOK_CHAR;
-			if (isalpha(*curr)) {
+			char *lex = (char *)malloc(sizeof(char) * 2);
+			lex[1] = '\0';
+			if ((int)*curr < 128) {
 				start = curr;
+                lex[0] = *start;
+				if (*curr == '\\') {
+                    log_trace("enters");
+					curr++;
+					col++;
+					if (*curr == 'n') lex[0] = '\n';
+					else if (*curr == 't') lex[0] = '\t';
+					else if (*curr == 'r') lex[0] = '\r';
+					else if (*curr == '0') lex[0] = '\0';
+					else {
+						log_fatal("not a valid escaped char %i,%i", loc.line, col);
+						exit(1);
+					}
+				}
 				curr++;
 				col++;
 				if (*curr != '\'') {
-					log_fatal("not a valid char");
+						log_fatal("not a valid char %i,%i", loc.line, col);
 					exit(1);
 				}
 				curr++;
@@ -292,10 +309,6 @@ void lex_program(Lexer *lexer, const char *program) {
 				log_fatal("not a valid char");
 				exit(1);
 			}
-
-			char *lex = (char *)malloc(sizeof(char) * 2);
-			strncpy(lex, start, 1);
-			lex[1] = '\0';
 
 			add_token(lexer, tok_type, loc, 1, lex, NULL);
 

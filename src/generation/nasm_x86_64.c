@@ -148,6 +148,7 @@ void generate_operations() {
 			case IR_SUB:
 			case IR_MUL:
 			case IR_DIV:
+			case IR_MOD:
 				generate_binaryop(i);
 				break;
 			case IR_UMINUS:
@@ -255,20 +256,20 @@ char *val_string(IrValue value) {
 	char *string_val = (char *)malloc(sizeof(char) * MAX_SYMBOL_SIZE);
 	switch (value.type) {
 		case IRVAL_INT:
-			snprintf(string_val, MAX_SYMBOL_SIZE, "%i", value.data.ival);
+			snprintf(string_val, MAX_SYMBOL_SIZE, "0x%X", value.data.ival);
 			break;
 		case IRVAL_FLOAT:
 			snprintf(string_val, MAX_SYMBOL_SIZE, "%.2f", value.data.fval);
 			break;
 		case IRVAL_ADDRESS:
-			snprintf(string_val, MAX_SYMBOL_SIZE, ".POP%i", value.data.index);
+			snprintf(string_val, MAX_SYMBOL_SIZE, ".POP%X", value.data.index);
 			break;
 		case IRVAL_IDENTIFIER:
 			snprintf(string_val, MAX_SYMBOL_SIZE, "[%s]", value.data.ident);
 
 			break;
 		case IRVAL_CHAR:
-			snprintf(string_val, MAX_SYMBOL_SIZE, "%X", value.data.ival);
+			snprintf(string_val, MAX_SYMBOL_SIZE, "0x%X", value.data.cval);
 			break;
 	}
 	return string_val;
@@ -327,6 +328,17 @@ int gen_div(int r1, int r2) {
 			"\tcqo\n"
 			"\tidiv\t%s\n"
 			"\tmov\t%s, rax\n",
+			registers[r1], registers[r2], registers[r1]);
+	deallocate_register(r2);
+	return r1;
+}
+
+int gen_modulo(int r1, int r2) {
+	fprintf(dest,
+			"\tmov\trax, %s\n"
+			"\tcqo\n"
+			"\tidiv\t%s\n"
+			"\tmov\t%s, rdx\n",
 			registers[r1], registers[r2], registers[r1]);
 	deallocate_register(r2);
 	return r1;
@@ -391,6 +403,9 @@ void generate_binaryop(int index) {
 			break;
 		case IR_DIV:
 			ir->instructions[index].result.data.index = gen_div(arg1, arg2);
+			break;
+		case IR_MOD:
+			ir->instructions[index].result.data.index = gen_modulo(arg1, arg2);
 			break;
 
 		case IR_EQUAL:
@@ -459,16 +474,13 @@ void generate_glob_decl(int index) {
 }
 
 void generate_assign(int index) {
-	/* FIX: multi assignation if broken. At the moment a = b = c isn't available
-	 *
-	 * TODO: There's a way. Implement a attribute that says if the operatino
-	 * will be used or it will be dropped
-	 * */
 	IrOperation op = ir->instructions[index];
 
 	int r = load_value(op.arg2);
 	fprintf(dest, "\tmov\t%s, %s\n", val_string(op.arg1), registers[r]);
-	deallocate_register(r);
+	if (op.is_used) {
+		ir->instructions[index].result.data.index = r;
+	} else deallocate_register(r);
 }
 
 void generate_glob_funct(int index) {
@@ -489,12 +501,12 @@ void generate_glob_funct_end(int index) {
 }
 
 void generate_glob_funct_usage(int index) {
-    log_info("enters");
+	log_info("enters");
 	IrOperation op = ir->instructions[index];
 	if (op.arg1.type == IRVAL_IDENTIFIER) {
 		const char *name = op.arg1.data.ident;
 		int idx = find_symbol(nasm_table, name);
-        log_info("name");
+		log_info("name");
 		fprintf(dest, "\tcall\t%s\n", name);
 	}
 }
