@@ -1,0 +1,15 @@
+int a = 20
+
+print_int(a)
+
+void print_alphabet(){
+    a = 33
+    while(a < 128){
+        print_char(a)
+        a = a + 1
+    }
+    print_char(10)
+}
+
+print_alphabet()
+print_int(a)

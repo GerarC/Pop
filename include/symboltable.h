@@ -3,11 +3,12 @@
 
 #include "common.h"
 #include "config.h"
+#include "parser.h"
 #include "token.h"
 #include "typedef.h"
-#include "parser.h"
 
 typedef enum _data_type_e {
+	DT_VOID,
 	DT_INT,
 	DT_FLOAT,
 	DT_LONG,
@@ -76,7 +77,11 @@ int find_symbol(SymbolTable *table, const char *symbol);
 
 const char *find_symbol_type(SymbolTable *table, int index);
 
-Symbol create_symbol(Node *node);
+Symbol get_symbol(SymbolTable *table, int index);
+
+void print_symbol_table(SymbolTable *table);
+
+Symbol create_symbol(Node *node, StructureType stype);
 
 /* Creates and returns the main global scope
  * */

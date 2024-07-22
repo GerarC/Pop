@@ -1,24 +1,32 @@
-char b = 'H'
-print_char(b)
-b = 'e'
-print_char(b)
-b = 'l'
-print_char(b)
-print_char(b)
-b = 'o'
-print_char(b)
-print_char(32)
-b = 'W'
-print_char(b)
-b = 'o'
-print_char(b)
-b = 'r'
-print_char(b)
-b = 'l'
-print_char(b)
-b = 'd'
-print_char(b)
-print_char(10)
+
+void hello_world(){
+    c = 'H'
+    print_char(c)
+    c = 'e'
+    print_char(c)
+    c = 'l'
+    print_char(c)
+    print_char(c)
+    c = 'o'
+    print_char(c)
+    print_char(32)
+    c = 'W'
+    print_char(c)
+    c = 'o'
+    print_char(c)
+    c = 'r'
+    print_char(c)
+    c = 'l'
+    print_char(c)
+    c = 'd'
+    print_char(c)
+    print_char(10)
+}
+
+hello_world()
+char c
+hello_world()
+
 
 int index = 65
 while(index < 123){

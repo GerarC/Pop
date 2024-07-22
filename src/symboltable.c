@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+void print_symbol(Symbol *sym);
+void print_table(SymbolTable *table);
+
 void add_symbol(SymbolTable *table, const Symbol symbol) {
 	if (table->count >= table->capacity) {
 		table->capacity *= 2;
@@ -32,11 +35,12 @@ int find_symbol(SymbolTable *table, const char *symbol) {
 	return -1;
 }
 
-Symbol create_symbol(Node *node) {
+Symbol create_symbol(Node *node, StructureType stype) {
 	Token tok = node->token;
 	ScopeType scope = SC_GLOBAL;
 	DataType dtype = DT_INT;
-	if (strcmp(node->sem_type, "int") == 0 || tok.type == TOK_INT)
+	if (strcmp(node->sem_type, "void") == 0) dtype = DT_VOID;
+	else if (strcmp(node->sem_type, "int") == 0 || tok.type == TOK_INT)
 		dtype = DT_INT;
 	else if (strcmp(node->sem_type, "char") == 0 || tok.type == TOK_CHAR == 0)
 		dtype = DT_CHAR;
@@ -44,7 +48,6 @@ Symbol create_symbol(Node *node) {
 		log_fatal("%s is not a type: %i", tok.lexeme, tok.type);
 		exit(1);
 	}
-	StructureType stype = ST_VARIABLE;
 	Symbol sym = {.loc = tok.location,
 				  .scope = scope,
 				  .dtype = dtype,
@@ -92,6 +95,10 @@ const char *find_symbol_type(SymbolTable *table, int index) {
 			return "char";
 			break;
 
+		case DT_VOID:
+			return "void";
+			break;
+
 		case DT_BOOL:
 			return "bool";
 			break;
@@ -105,9 +112,42 @@ const char *find_symbol_type(SymbolTable *table, int index) {
 	return NULL;
 }
 
+Symbol get_symbol(SymbolTable *table, int idx) {
+	if (table == NULL) {
+		log_fatal("Table is null");
+		exit(1);
+	}
+	if (idx > table->count) {
+		log_fatal("Out of bounds index %i", idx);
+		exit(1);
+	}
+	return table->symbols[idx];
+}
+
 void free_symbol_table(SymbolTable *table) {
 	if (table == NULL) return;
 	for (int i = 0; i < table->count; i++)
 		free_symbol(&table->symbols[i]);
 	free(table);
+}
+
+void print_symbol(Symbol *sym) {
+	printf("%s: %i,%i sc=%i dt=%i st=%i attr=%X ofs=%i", sym->name,
+		   sym->loc.line, sym->loc.col, sym->scope, sym->dtype, sym->stype,
+		   sym->attrs, sym->offset);
+	if (sym->members != NULL) {
+		printf(" Members:\n");
+		print_table(sym->members);
+	} else printf("\n");
+}
+
+void print_table(SymbolTable *table) {
+	for (int i = 0; i < table->count; i++)
+		print_symbol(&table->symbols[i]);
+}
+
+void print_symbol_table(SymbolTable *table) {
+	if (LOG_DEBUG < LOG_LEVEL) return;
+	log_debug("Symbol table");
+	print_table(table);
 }

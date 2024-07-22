@@ -67,7 +67,8 @@ int main(int argc, char **argv) {
 		semantic_analysis(ast, table);
 
 		IntermediateRepresentation *ir =
-			create_intermediate_representation(ast);
+			create_intermediate_representation(ast, table);
+		if (debug) print_ir(ir->globals);
 		if (debug) print_ir(ir);
 
 		generate_nasm_x86_64(output_file, ir, table);

@@ -28,7 +28,7 @@ void lex_program(Lexer *lexer, const char *program);
 
 /* lex a work a sets its size and the destination
  * */
-int compare_reserved(const char **curr, const char *rword, char **dest,
+int is_reser(const char **curr, const char *rword, char **dest,
 					 int *col);
 
 /* Takes a lexer and print its token list

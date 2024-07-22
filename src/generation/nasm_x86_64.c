@@ -59,6 +59,11 @@ void generate_unitaryop(int index);
 void generate_glob_decl(int index);
 void generate_assign(int index);
 
+/// Functions
+void generate_glob_funct(int index);
+void generate_glob_funct_end(int index);
+void generate_glob_funct_usage(int index);
+
 /// If and while statements
 void generate_ifdo(int index);
 void generate_else(int index);
@@ -70,11 +75,14 @@ void generate_temp_print_char(int index);
 
 void generate_operations();
 void generate_header();
+void generate_start();
+void generate_globals();
 void generate_footer();
 
 void generate_nasm_x86_64(const char *destination,
 						  IntermediateRepresentation *inrepr,
 						  SymbolTable *tbl) {
+	log_info("NASM code generation");
 	dest = fopen(destination, "w");
 	nasm_table = tbl;
 	ir = inrepr;
@@ -85,6 +93,8 @@ void generate_nasm_x86_64(const char *destination,
 
 	deallocate_all_registers();
 	generate_header();
+	generate_globals();
+	generate_start();
 
 	generate_operations();
 
@@ -93,7 +103,6 @@ void generate_nasm_x86_64(const char *destination,
 }
 
 void generate_operations() {
-	log_info("NASM code generation");
 	size i;
 	for (i = 0; i < ir->count; i++) {
 		IrOperation op = ir->instructions[i];
@@ -104,6 +113,16 @@ void generate_operations() {
 				break;
 			case IR_ASSIGNMENT:
 				generate_assign(i);
+				break;
+
+			case IR_FUNCT_DECLARATION:
+				generate_glob_funct(i);
+				break;
+			case IR_FUNCT_END:
+				generate_glob_funct_end(i);
+				break;
+			case IR_FUNCT_USAGE:
+				generate_glob_funct_usage(i);
 				break;
 
 			case IR_IF:
@@ -152,6 +171,15 @@ void generate_operations() {
 				generation_error("OP NOT IMPLEMENTED", &op);
 		}
 	}
+}
+
+void generate_globals() {
+	IntermediateRepresentation *temp_ir = ir;
+	ir = ir->globals;
+
+	generate_operations();
+
+	ir = temp_ir;
 }
 
 void generate_header() {
@@ -203,12 +231,15 @@ void generate_header() {
 				  "\tmov\trdx, 1\n"
 				  "\tsyscall\n"
 				  "\tadd\trsp, 8\n"
-				  "\tret\n\n"
+				  "\tret\n\n");
+}
 
-				  // Program
-				  "_start:\n"
-				  "\tpush\trbp\n"
-				  "\tmov\trbp, rsp\n"
+void generate_start() {
+	fprintf(dest,
+			// Program
+			"_start:\n"
+			"\tpush\trbp\n"
+			"\tmov\trbp, rsp\n"
 
 	);
 }
@@ -373,7 +404,7 @@ void generate_binaryop(int index) {
 			break;
 
 		default:
-			generation_error("%i OP NOT IMPLEMENTED", &op);
+			generation_error("COMPARISON OP NOT IMPLEMENTED", &op);
 	}
 }
 
@@ -403,7 +434,7 @@ void generate_unitaryop(int index) {
 			break;
 
 		default:
-			generation_error("%i OP NOT IMPLEMENTED", &op);
+			generation_error("UNITARY OP NOT IMPLEMENTED", &op);
 	}
 }
 
@@ -438,6 +469,34 @@ void generate_assign(int index) {
 	int r = load_value(op.arg2);
 	fprintf(dest, "\tmov\t%s, %s\n", val_string(op.arg1), registers[r]);
 	deallocate_register(r);
+}
+
+void generate_glob_funct(int index) {
+	IrOperation op = ir->instructions[index];
+	if (op.arg1.type == IRVAL_IDENTIFIER) {
+		const char *name = op.arg1.data.ident;
+		int idx = find_symbol(nasm_table, name);
+		fprintf(dest,
+				"\n\tglobal\t%s\n"
+				"%s:\n",
+				name, name);
+	}
+}
+
+void generate_glob_funct_end(int index) {
+	fprintf(dest, "\tmov\trax, 0\n"
+				  "\tret\n\n");
+}
+
+void generate_glob_funct_usage(int index) {
+    log_info("enters");
+	IrOperation op = ir->instructions[index];
+	if (op.arg1.type == IRVAL_IDENTIFIER) {
+		const char *name = op.arg1.data.ident;
+		int idx = find_symbol(nasm_table, name);
+        log_info("name");
+		fprintf(dest, "\tcall\t%s\n", name);
+	}
 }
 
 void generate_ifdo(int index) {

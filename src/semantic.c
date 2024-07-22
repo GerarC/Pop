@@ -10,8 +10,11 @@ SymbolTable *sem_table = NULL;
 const char *compare_types(Node *a, Node *b);
 void statement_analysis(Node *stmt);
 void declaration_analysis(Node *declaration);
+void function_declaration_analysis(Node *fdeclaration);
+void function_usage_analysis(Node *funct);
 void assignment_analysis(Node *assignment);
 void ifwhile_analysis(Node *ifwh);
+void block_analysis(Node *block);
 void else_analysis(Node *else_s);
 void expression_analysis(Node *expr);
 void binaryop_analysis(Node *binary);
@@ -69,6 +72,14 @@ void statement_analysis(Node *stmt) {
 			declaration_analysis(stmt);
 			break;
 
+		case NT_FUNC_DECLARATION:
+			function_declaration_analysis(stmt);
+			break;
+
+		case NT_FUNC_USAGE:
+			function_usage_analysis(stmt);
+			break;
+
 		case NT_ASSIGNMENT:
 			assignment_analysis(stmt);
 			break;
@@ -112,17 +123,34 @@ void declaration_analysis(Node *declaration) {
 		Node *child = declaration->children[i];
 		if (child->child_count == 0) {
 			strncpy(declaration->children[i]->sem_type, type, MAX_SYMBOL_SIZE);
-			sym = create_symbol(child);
+			sym = create_symbol(child, ST_VARIABLE);
 			add_symbol(sem_table, sym);
 
 		} else {
 			strncpy(declaration->children[i]->children[0]->sem_type, type,
 					MAX_SYMBOL_SIZE);
-			sym = create_symbol(child->children[0]);
+			sym = create_symbol(child->children[0], ST_VARIABLE);
 			add_symbol(sem_table, sym);
 			assignment_analysis(child);
 		}
 	}
+}
+
+void function_declaration_analysis(Node *fdeclaration) {
+	Token tok = fdeclaration->token;
+	const char *type = tok.lexeme;
+	Symbol sym;
+	strncpy(fdeclaration->children[0]->sem_type, type, MAX_SYMBOL_SIZE);
+	sym = create_symbol(fdeclaration->children[0], ST_FUNCTION);
+	add_symbol(sem_table, sym);
+}
+
+void function_usage_analysis(Node *funct) {
+	Token tok = funct->token;
+	const char *type = tok.lexeme;
+	int idx = find_symbol(sem_table, type);
+	if (idx == -1) semantic_error("Type doesn't exists", funct);
+	print_symbol_table(sem_table);
 }
 
 void assignment_analysis(Node *assignment) {
@@ -147,17 +175,18 @@ void ifwhile_analysis(Node *ifwh) {
 	Token tok = ifwh->token;
 	if (tok.type == TOK_IF) {
 		expression_analysis(ifwh->children[0]);
-		for (int i = 1; i < ifwh->child_count; i++)
-			statement_analysis(ifwh->children[i]);
+		block_analysis(ifwh->children[1]);
 	}
 }
 
 void else_analysis(Node *else_s) {
 	Token tok = else_s->token;
-	if (tok.type == TOK_IF) {
-		for (int i = 0; i < else_s->child_count; i++)
-			statement_analysis(else_s->children[i]);
-	}
+	if (tok.type == TOK_ELSE) block_analysis(else_s->children[0]);
+}
+
+void block_analysis(Node *block) {
+	for (int i = 0; i < block->child_count; i++)
+		statement_analysis(block->children[i]);
 }
 
 void expression_analysis(Node *expr) {
@@ -175,7 +204,7 @@ void expression_analysis(Node *expr) {
 			break;
 
 		default:
-            log_error("error token: %s", token_string(expr->token));
+			log_error("error token: %s", token_string(expr->token));
 			semantic_error("Unreacheable expression", expr);
 	}
 }
