@@ -35,6 +35,7 @@ By the moment the steps I've followed to reach the compiler has been:
    The semantic analysis verify that operands, assigments, so on and so forth
    are being consistent operating types with compatible types in a determined scope of the application.
    I can analyze this through scopes that saves types and symbols of each code block inside a symbol table.
+   Symbol table used in this attempt of language is inspired on python one.
 
 4. _Intermediate Representation:_
    Now, In this step I convert the verified AST into three address code or "TAC". This tac is easier to generate ASM with.
@@ -94,6 +95,8 @@ There are some examples:
 - 02-if_else
 - 03-variables
 - 04-while
+- 05-types
+- 06-basic-funct
 
 To compile and explore these examples use the next command:
 
@@ -110,7 +113,7 @@ for example `make ex03-variables`
 - [x] Loops
 - [x] Statically typed (Like Typescript)
 - [x] Chars
-- [ ] Functions
+- [x] Functions
 - [ ] Arrays
 - [ ] Strings
 - [ ] Turing-complete (Can emulate itself)

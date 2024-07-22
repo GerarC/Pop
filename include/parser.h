@@ -1,16 +1,35 @@
 #ifndef EXPR_H
 
 #define EXPR_H
-#include "token.h"
-#include "lexer.h"
-#include "typedef.h"
 #include "config.h"
+#include "lexer.h"
+#include "token.h"
+#include "typedef.h"
 
 typedef struct _node_t Node;
 
 typedef enum {
-	NT_BINARY, // Only has two children (for  math and logical expressions)
-	NT_MULTICHILDREN, // has more than two children (for class declarations)
+	NT_MAIN,
+	NT_TYPE,
+	NT_LITERAL,
+	NT_IDENTIFIER,
+
+	NT_BINARYOP,
+	NT_UNITARYOP,
+	NT_ASSIGNMENT,
+	NT_DECLARATION,
+
+	NT_IF,
+	NT_WHILE,
+	NT_ELSE,
+	NT_BLOCK_STATEMENTS,
+
+	NT_FUNC_DECLARATION,
+	NT_FUNC_ARGUMENT_DECL,
+	NT_FUNC_USAGE,
+	NT_FUNC_USAGE_ARG,
+    NT_TEMP_PRINT_INT,
+    NT_TEMP_PRINT_CHAR,
 } NodeType;
 
 /* Struct that represents a node in the AST
@@ -18,17 +37,13 @@ typedef enum {
 typedef struct _node_t {
 	Token token;
 	NodeType type;
-	/*How many children it has  (only used if node is multi-children)*/
-	int child_count;
 	/*Left node's child*/
-	Node *left;
-	/*Right node's child*/
-	Node *right;
-	/*A list of children if tree isn't binary*/
 	Node **children;
-    /*Type for the semantic analysis*/
-    char sem_type[MAX_SYMBOL_SIZE];
-    int capacity;
+	/*How many children it has*/
+	int child_count;
+	int capacity;
+	/*Type for the semantic analysis*/
+	char sem_type[MAX_SYMBOL_SIZE];
 } Node;
 
 /* Struct that points tokens and helps in the syntax analysis labor
@@ -48,7 +63,7 @@ Parser create_parser(Lexer *lex);
  * */
 Node *parse_program(Parser *parser);
 
-void print_ast(Node * root);
+void print_ast(Node *root);
 
 /* Frees an AST by its root token
  * */

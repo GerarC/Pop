@@ -3,6 +3,7 @@
 
 #include "./config.h"
 #include "./token.h"
+#include "./common.h"
 
 typedef struct _lexer_t {
 	Token *tokens;
@@ -17,7 +18,7 @@ Lexer create_lexer(const char *source);
 
 /* malloc's a new token with give data and adds it to the parser
  * */
-void add_token(Lexer *lexer, TokenType type, TokenLocation location, int length,
+void add_token(Lexer *lexer, TokenType type, SourceLocation location, int length,
 			   char *lexeme, void *value);
 
 /* Receives an array code lines, it will tokenize the entire array and return a
@@ -27,7 +28,7 @@ void lex_program(Lexer *lexer, const char *program);
 
 /* lex a work a sets its size and the destination
  * */
-int compare_reserved(const char **curr, const char *rword, char **dest,
+int is_reser(const char **curr, const char *rword, char **dest,
 					 int *col);
 
 /* Takes a lexer and print its token list

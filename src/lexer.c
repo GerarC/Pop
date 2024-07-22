@@ -13,7 +13,7 @@ void lex_program(Lexer *lexer, const char *program) {
 	const char *start;
 
 	TokenType tok_type;
-	TokenLocation loc = {0};
+	SourceLocation loc = {0};
 	strlcpy(loc.file, lexer->source, MAX_FILENAME_SIZE);
 	int col = 0;
 
@@ -232,32 +232,26 @@ void lex_program(Lexer *lexer, const char *program) {
 			start = curr;
 			loc.col = col;
 			char *lex = NULL;
-			if (compare_reserved(&curr, "true", &lex, &col) ||
-				compare_reserved(&curr, "false", &lex, &col))
+			if (is_reser(&curr, "true", &lex, &col) ||
+				is_reser(&curr, "false", &lex, &col))
 				tok_type = TOK_BOOL;
-			else if (compare_reserved(&curr, "and", &lex, &col))
-				tok_type = TOK_AND;
-			else if (compare_reserved(&curr, "or", &lex, &col))
-				tok_type = TOK_OR;
-			else if (compare_reserved(&curr, "not", &lex, &col))
-				tok_type = TOK_NOT;
-			else if (compare_reserved(&curr, "if", &lex, &col))
-				tok_type = TOK_IF;
-			else if (compare_reserved(&curr, "else", &lex, &col))
-				tok_type = TOK_ELSE;
-			else if (compare_reserved(&curr, "while", &lex, &col))
-				tok_type = TOK_WHILE;
-			else if (compare_reserved(&curr, "int", &lex, &col))
-				tok_type = TOK_INTTYPE;
-			else if (compare_reserved(&curr, "bool", &lex, &col))
+			else if (is_reser(&curr, "and", &lex, &col)) tok_type = TOK_AND;
+			else if (is_reser(&curr, "or", &lex, &col)) tok_type = TOK_OR;
+			else if (is_reser(&curr, "not", &lex, &col)) tok_type = TOK_NOT;
+			else if (is_reser(&curr, "if", &lex, &col)) tok_type = TOK_IF;
+			else if (is_reser(&curr, "else", &lex, &col)) tok_type = TOK_ELSE;
+			else if (is_reser(&curr, "while", &lex, &col)) tok_type = TOK_WHILE;
+			else if (is_reser(&curr, "int", &lex, &col)) tok_type = TOK_INTTYPE;
+			else if (is_reser(&curr, "void", &lex, &col)) tok_type = TOK_VOIDTYPE;
+			else if (is_reser(&curr, "bool", &lex, &col))
 				tok_type = TOK_BOOLTYPE;
-			else if (compare_reserved(&curr, "char", &lex, &col))
+			else if (is_reser(&curr, "char", &lex, &col))
 				tok_type = TOK_CHARTYPE;
-			else if (compare_reserved(&curr, "string", &lex, &col))
+			else if (is_reser(&curr, "string", &lex, &col))
 				tok_type = TOK_STRTYPE;
-			else if (compare_reserved(&curr, "print_int", &lex, &col))
+			else if (is_reser(&curr, "print_int", &lex, &col))
 				tok_type = TOK_PRINT_INT;
-			else if (compare_reserved(&curr, "print_char", &lex, &col))
+			else if (is_reser(&curr, "print_char", &lex, &col))
 				tok_type = TOK_PRINT_CHAR;
 			else tok_type = TOK_IDENTIFIER;
 
@@ -346,8 +340,7 @@ void lex_program(Lexer *lexer, const char *program) {
 	add_token(lexer, TOK_EOF, loc, 1, strdup("eof"), NULL);
 }
 
-int compare_reserved(const char **curr, const char *rword, char **dest,
-					 int *col) {
+int is_reser(const char **curr, const char *rword, char **dest, int *col) {
 	int equals = 0;
 	int rwlen = strlen(rword);
 	if (strlen(*curr) >= rwlen) {
@@ -361,7 +354,7 @@ int compare_reserved(const char **curr, const char *rword, char **dest,
 	return 1;
 }
 
-void add_token(Lexer *lexer, TokenType type, TokenLocation loc, int len,
+void add_token(Lexer *lexer, TokenType type, SourceLocation loc, int len,
 			   char *lex, void *val) {
 	if (lexer->count >= lexer->capacity) {
 		lexer->capacity *= 2;
@@ -380,7 +373,7 @@ void add_token(Lexer *lexer, TokenType type, TokenLocation loc, int len,
 
 void print_lexer(Lexer *lex) {
 	if (LOG_DEBUG < LOG_LEVEL) return;
-	log_debug("Print lexer:");
+	log_debug("Lexical Analysis:");
 	for (int i = 0; i < lex->count; i++)
 		printf("\t%s\n", token_string(lex->tokens[i]));
 }

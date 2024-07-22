@@ -76,6 +76,10 @@ char *token_string(Token tok) {
 			token_type = strdup("Boolean");
 			break;
 
+		case TOK_CHAR:
+			token_type = strdup("Char");
+			break;
+
 		case TOK_COMMA:
 			token_type = strdup("comma");
 			break;
@@ -143,7 +147,7 @@ char *token_string(Token tok) {
 	return tkn_str;
 }
 
-void create_token(Token *token, TokenType type, TokenLocation loc, int length,
+void create_token(Token *token, TokenType type, SourceLocation loc, int length,
 				  char *text, void *value) {
 	token->type = type;
 	token->location = loc;

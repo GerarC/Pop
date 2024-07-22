@@ -1,6 +1,10 @@
 print_int(34)
 
-if (1) print_int(69)
+if (1) {
+    print_int(69)
+    print_int(69)
+    print_int(69)
+} 
 else print_int(666)
 
 print_int(34)

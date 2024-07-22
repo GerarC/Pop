@@ -1,6 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "common.h"
 #include "config.h"
 
 /* Enum with all the kinds of tokens
@@ -16,17 +17,17 @@ typedef enum _token_type_e {
 	TOK_ELN,		// EndLine
 	TOK_MAIN,		// Root of the file
 	TOK_EOF,		// End of File
-			 // Comparators
-	TOK_NOT,   // ! not
-	TOK_GT,	   // >
-	TOK_GEQT,  // >=
-	TOK_LT,	   // <
-	TOK_LEQT,  // <=
-	TOK_EQUAL, // ==
-	TOK_DIFF,  // ==
-	TOK_OR,	   //  || or
-	TOK_AND,   // && and
-	TOK_XOR,   // ^ xor
+					// Comparators
+	TOK_NOT,		// ! not
+	TOK_GT,			// >
+	TOK_GEQT,		// >=
+	TOK_LT,			// <
+	TOK_LEQT,		// <=
+	TOK_EQUAL,		// ==
+	TOK_DIFF,		// ==
+	TOK_OR,			//  || or
+	TOK_AND,		// && and
+	TOK_XOR,		// ^ xor
 
 	// Assignment
 	TOK_PLUS_PLUS,	 // ++
@@ -47,15 +48,17 @@ typedef enum _token_type_e {
 	TOK_BINAND, // &
 	TOK_BINXOR, // ^
 	// Reserved
-	TOK_NEW,	  // New
-	TOK_CLASS,	  // Class
-	TOK_LET,	  // Variable
-	TOK_CONST,	  // Constant
-	TOK_UNSIGNED, // Constant
-	TOK_ARROW,	  // ->
-	TOK_IF,		  // if
-	TOK_ELSE,	  // if
-	TOK_WHILE,	  // if
+	TOK_NEW,		// New
+	TOK_CLASS,		// Class
+	TOK_LET,		// Variable
+	TOK_CONST,		// Constant
+	TOK_UNSIGNED,	// Constant
+	TOK_ARROW,		// ->
+	TOK_IF,			// if
+	TOK_ELSE,		// if
+	TOK_WHILE,		// if
+	TOK_BLOCK_GLUE, // NO TOKEN JUST A GLUE
+	TOK_ARGS_GLUE, // NO TOKEN JUST A GLUE
 	// TOK_IMPORT, // Constant
 	// Grouping
 	TOK_LPAREN, // (
@@ -73,6 +76,7 @@ typedef enum _token_type_e {
 	TOK_BOOLTYPE, // 'bool'
 	TOK_CHARTYPE, // 'char'
 	TOK_STRTYPE,  // 'string'
+	TOK_VOIDTYPE, // 'void'
 
 	TOK_PRINT_INT,
 	TOK_PRINT_CHAR,
@@ -80,18 +84,11 @@ typedef enum _token_type_e {
 	TOK_INVALID
 } TokenType;
 
-/* Structure that saves the exact location of a token in the file
- * */
-typedef struct _token_location_t {
-	int line, col;
-	char file[MAX_FILENAME_SIZE];
-} TokenLocation;
-
 /* Token structure represents a piece of code in its most important information
  * */
 typedef struct _token_t {
 	TokenType type;
-	TokenLocation location;
+	SourceLocation location;
 	int length;
 	char *lexeme;
 	void *value;
@@ -99,7 +96,7 @@ typedef struct _token_t {
 
 /* Create a new token with the most important information
  * */
-void create_token(Token *token, TokenType type, TokenLocation loc, int length,
+void create_token(Token *token, TokenType type, SourceLocation loc, int length,
 				  char *lexeme, void *value);
 
 /* Takes a token a return a string representation

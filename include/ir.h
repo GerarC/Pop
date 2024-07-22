@@ -30,6 +30,9 @@ typedef enum {
 	IR_ENDBLOCK,
 
 	IR_DECLARATION,
+	IR_FUNCT_DECLARATION,
+	IR_FUNCT_END,
+	IR_FUNCT_USAGE,
 	IR_ASSIGNMENT,
 
 	IR_TEMP_PRINT_INT,
@@ -63,13 +66,13 @@ typedef struct _ir_operation_t {
 } IrOperation;
 
 typedef struct _intermediary_representation_t {
-	Scope *scope;
 	IrOperation *instructions;
 	size count;
 	size capacity;
+	struct _intermediary_representation_t *globals;
 } IntermediateRepresentation;
 
-IntermediateRepresentation *create_intermediate_representation(Node *ast);
+IntermediateRepresentation *create_intermediate_representation(Node *ast, SymbolTable *tbl);
 
 void free_intermediate_representation(IntermediateRepresentation *ir);
 

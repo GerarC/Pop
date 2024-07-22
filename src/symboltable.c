@@ -4,150 +4,150 @@
 #include <stdlib.h>
 #include <string.h>
 
-int add_symbol(Scope *scope, const char *type, const char *symbol) {
-	int type_idx = 0;
-	Scope *current = scope;
-	TableEntry curr_entry;
-	// Find the type
-	while (current != NULL) {
-		for (type_idx = 0; type_idx < current->table.count; type_idx++) {
-			curr_entry = current->table.entries[type_idx];
-			// Outs of the loop if type is found
+void print_symbol(Symbol *sym);
+void print_table(SymbolTable *table);
 
-			if (strcmp(curr_entry.type, type) == 0) goto out_add_loop;
-		}
-		current = current->parent;
+void add_symbol(SymbolTable *table, const Symbol symbol) {
+	if (table->count >= table->capacity) {
+		table->capacity *= 2;
+		table->symbols =
+			(Symbol *)realloc(table->symbols, sizeof(Symbol) * table->capacity);
 	}
+	strncpy(table->symbols[table->count].name, symbol.name, MAX_SYMBOL_SIZE);
+	table->symbols[table->count].loc = symbol.loc;
+	table->symbols[table->count].scope = symbol.scope;
+	table->symbols[table->count].dtype = symbol.dtype;
+	table->symbols[table->count].stype = symbol.stype;
+	table->symbols[table->count].attrs = symbol.attrs;
+	table->symbols[table->count].offset = symbol.offset;
+	table->symbols[table->count].members = symbol.members;
+	table->count++;
+}
 
-	// As all scopes have been iterated and no one owns the type,
-	// so it doesn't exist.
-	log_fatal("The type doesn't exist");
+void remove_symbol(SymbolTable *table, const char *symbol) {
+	log_trace("remove symbol not implemented");
+}
+
+int find_symbol(SymbolTable *table, const char *symbol) {
+	for (int i = 0; i < table->count; i++) {
+		if (strcmp(table->symbols[i].name, symbol) == 0) return i;
+	}
 	return -1;
-out_add_loop:
+}
 
-	// Check if the symbol exists in the current scope
-	for (int i = 0; i < scope->table.count; i++)
-		for (int j = 0; j < scope->table.entries[i].count; j++)
-			if (strcmp(scope->table.entries[i].symbols[j].name, symbol) == 0)
-				return -2;
-
-	// Type exists but the current scope doesn't have any symbol of it
-	if (scope != current) type_idx = add_entry(scope, type);
-	if (type_idx == -2) {
-		log_error("Entry is full");
-		return -4;
+Symbol create_symbol(Node *node, StructureType stype) {
+	Token tok = node->token;
+	ScopeType scope = SC_GLOBAL;
+	DataType dtype = DT_INT;
+	if (strcmp(node->sem_type, "void") == 0) dtype = DT_VOID;
+	else if (strcmp(node->sem_type, "int") == 0 || tok.type == TOK_INT)
+		dtype = DT_INT;
+	else if (strcmp(node->sem_type, "char") == 0 || tok.type == TOK_CHAR == 0)
+		dtype = DT_CHAR;
+	else {
+		log_fatal("%s is not a type: %i", tok.lexeme, tok.type);
+		exit(1);
 	}
+	Symbol sym = {.loc = tok.location,
+				  .scope = scope,
+				  .dtype = dtype,
+				  .stype = stype,
+				  .attrs = 1,
+				  .offset = 0,
+				  .members = NULL};
+	strncpy(sym.name, tok.lexeme, MAX_SYMBOL_SIZE);
 
-	// Add the symbol to the table
-	int symbol_num = scope->table.entries[type_idx].count;
-	if (symbol_num < MAX_ENTRY_SYMBOLS) {
-		// type_idx must be the correct because if the scope doesn't have it,
-		// add_entry returns it, in the other hand it's already set by the loop
-		strncpy(scope->table.entries[type_idx].symbols[symbol_num].name, symbol,
-				MAX_SYMBOL_SIZE);
-		assert(strcmp(scope->table.entries[type_idx].symbols[symbol_num].name,
-					  symbol) == 0 &&
-			   "ERROR: types are different");
-		scope->table.entries[type_idx].count++;
-		return 0;
-	} else return -3;
+	return sym;
 }
 
-int remove_symbol(Scope *scope, const char *symbol) {
-	int type_idx, sym_idx;
-	int found = 0;
-	for (type_idx = 0; type_idx < scope->table.count; type_idx++)
-		for (int sym_idx = 0; sym_idx < scope->table.entries[type_idx].count;
-			 sym_idx++)
-			if (strcmp(scope->table.entries[type_idx].symbols[sym_idx].name,
-					   symbol) == 0) {
-				found = 1;
-				goto out_remove_loops;
-			}
-
-out_remove_loops:
-	if (!found) return -1;
-	for (int i = sym_idx; i < scope->table.entries[type_idx].count - 1; i++) {
-		scope->table.entries[type_idx].symbols[i] =
-			scope->table.entries[type_idx].symbols[i + 1];
-	}
-	scope->table.entries[type_idx].count--;
-	return 0;
+/* Creates and returns the main global scope
+ * */
+SymbolTable *create_table() {
+	SymbolTable *table = (SymbolTable *)malloc(sizeof(SymbolTable));
+	table->symbols = (Symbol *)malloc(sizeof(Symbol));
+	table->capacity = 1;
+	table->count = 0;
+	return table;
 }
 
-int add_entry(Scope *scope, const char *type) {
-	int count = scope->table.count;
-	for (int i = 0; i < count; i++)
-		if (strcmp(scope->table.entries[i].type, type) == 0) return -1;
-
-	if (count >= MAX_TABLE_ENTRIES) return -2;
-	strncpy(scope->table.entries[count].type, type, MAX_TYPE_SIZE);
-	scope->table.entries[count].count = 0;
-	scope->table.count++;
-	return count;
+void free_symbol(Symbol *sym) {
+	if (sym == NULL) return;
+	if (sym->members != NULL) free_symbol_table(sym->members);
 }
 
-int delete_entry(Scope *scope, const char *type) {
-	int type_idx = 0;
-	int count = scope->table.count;
-	int found = 0;
-	for (type_idx = 0; type_idx < count; type_idx++)
-		if (strcmp(scope->table.entries[type_idx].type, type) == 0) {
-			found = 1;
-			goto out_delete_entry_loop;
-		}
+const char *find_symbol_type(SymbolTable *table, int index) {
+	DataType dtype = table->symbols[index].dtype;
 
-out_delete_entry_loop:
-	if (!found) return -1;
-	for (int i = type_idx; i < scope->table.count - 1; i++)
-		scope->table.entries[i] = scope->table.entries[i + 1];
-	scope->table.count--;
-	return 0;
-}
+	switch (dtype) {
+		case DT_INT:
+			return "int";
+			break;
 
-const char *find_symbol(Scope *scope, const char *symbol) {
-	Scope *current = scope;
-	SymbolTable curr_table;
-	TableEntry curr_entry;
-	int symbol_num;
-	while (current != NULL) {
-		curr_table = current->table;
-		for (int i = 0; i < current->table.count; i++) {
-			curr_entry = curr_table.entries[i];
-			symbol_num = curr_entry.count;
-			for (int j = 0; j < symbol_num; j++) {
-				Symbol sym = curr_entry.symbols[j];
-				if (strcmp(symbol, sym.name) == 0)
-					return current->table.entries[i].type;
-			}
-		}
-		current = current->parent;
+		case DT_FLOAT:
+			return "float";
+			break;
+
+		case DT_LONG:
+			return "long";
+			break;
+
+		case DT_CHAR:
+			return "char";
+			break;
+
+		case DT_VOID:
+			return "void";
+			break;
+
+		case DT_BOOL:
+			return "bool";
+			break;
+
+		default:
+			log_fatal("%s of not implemented type: %i",
+					  table->symbols[index].name, dtype);
+			exit(1);
+			break;
 	}
 	return NULL;
 }
 
-Scope *create_global_scope() {
-	Scope *scope = (Scope *)malloc(sizeof(Scope));
-	if (scope == NULL) return NULL;
-	scope->table.count = 0;
-	const char *builtin_types[BUILTIN_TYPE_NUM] = {
-		"object", "int", "float", "char", "bool", "string", "byte", "hex"};
-	for (int i = 0; i < BUILTIN_TYPE_NUM; i++)
-		add_entry(scope, builtin_types[i]);
-	return scope;
+Symbol get_symbol(SymbolTable *table, int idx) {
+	if (table == NULL) {
+		log_fatal("Table is null");
+		exit(1);
+	}
+	if (idx > table->count) {
+		log_fatal("Out of bounds index %i", idx);
+		exit(1);
+	}
+	return table->symbols[idx];
 }
 
-Scope *enter_scope(Scope *parent) {
-	Scope *scope = (Scope *)malloc(sizeof(Scope));
-	if (scope == NULL) return NULL;
-	scope->table.count = 0;
-	scope->parent = parent;
-
-	return scope;
+void free_symbol_table(SymbolTable *table) {
+	if (table == NULL) return;
+	for (int i = 0; i < table->count; i++)
+		free_symbol(&table->symbols[i]);
+	free(table);
 }
 
-Scope *exit_scope(Scope *scope) {
-	Scope *parent = scope->parent;
-	free(scope);
-	return parent;
+void print_symbol(Symbol *sym) {
+	printf("%s: %i,%i sc=%i dt=%i st=%i attr=%X ofs=%i", sym->name,
+		   sym->loc.line, sym->loc.col, sym->scope, sym->dtype, sym->stype,
+		   sym->attrs, sym->offset);
+	if (sym->members != NULL) {
+		printf(" Members:\n");
+		print_table(sym->members);
+	} else printf("\n");
+}
+
+void print_table(SymbolTable *table) {
+	for (int i = 0; i < table->count; i++)
+		print_symbol(&table->symbols[i]);
+}
+
+void print_symbol_table(SymbolTable *table) {
+	if (LOG_DEBUG < LOG_LEVEL) return;
+	log_debug("Symbol table");
+	print_table(table);
 }

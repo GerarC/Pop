@@ -13,7 +13,8 @@
 #define COLOR_FATAL "\x1B[35m"
 #define COLOR_RESET "\033[0m"
 
-void logger(LogType type, const char *file, const char *message, ...) {
+void logger(LogType type, const char *file, const int line, const char *message,
+			...) {
 	if (type < LOG_LEVEL) return;
 	va_list ap;
 	time_t now;
@@ -59,10 +60,12 @@ void logger(LogType type, const char *file, const char *message, ...) {
 	if (PRINT_COLORS) fprintf(output, "%s%s [%s]", color, date, tag);
 	else fprintf(output, "%s [%s] %s: ", date, tag, file);
 
-	if (PRINT_FILE) fprintf(output, " %s: ", file);
+	if (PRINT_FILE) fprintf(output, " %s:", file);
+
+	if (PRINT_LINE) fprintf(output, "%u: ", line);
 	else fprintf(output, ": ");
 
-    if (PRINT_COLORS) fprintf(output, "%s", COLOR_RESET);
+	if (PRINT_COLORS) fprintf(output, "%s", COLOR_RESET);
 
 	va_start(ap, message);
 	vfprintf(output, message, ap);
