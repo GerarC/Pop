@@ -1,10 +1,10 @@
-print_int(34)
+print_char('-')
+print_char('\n')
 
-if (1) {
-    print_int(69)
-    print_int(69)
-    print_int(69)
-} 
+int b
+
+if (b) print_int(69)
 else print_int(666)
 
-print_int(34)
+print_char('-')
+print_char('\n')

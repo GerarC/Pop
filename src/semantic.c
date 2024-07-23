@@ -61,7 +61,11 @@ const char *compare_types(Node *a, Node *b) {
 		if (strcmp(b_type, "int") == 0 || strcmp(b_type, "float") == 0)
 			return "float";
 		else typing_error("Not compatible types", a, b);
-	} else typing_error("Some one is null (a | b)", a, b);
+	} else if (strcmp(a_type, "int") == 0 || strcmp(a_type, "long") == 0) {
+		if (strcmp(b_type, "int") == 0 || strcmp(b_type, "long") == 0)
+			return "long";
+		else typing_error("Not compatible types", a, b);
+	} else typing_error("NOT COMPATIBLE TYPES (a ~ b)", a, b);
 	return NULL;
 }
 
@@ -125,7 +129,6 @@ void declaration_analysis(Node *declaration) {
 			strncpy(declaration->children[i]->sem_type, type, MAX_SYMBOL_SIZE);
 			sym = create_symbol(child, ST_VARIABLE);
 			add_symbol(sem_table, sym);
-
 		} else {
 			strncpy(declaration->children[i]->children[0]->sem_type, type,
 					MAX_SYMBOL_SIZE);
@@ -158,6 +161,7 @@ void assignment_analysis(Node *assignment) {
 		assignment_analysis(assignment->children[1]);
 	} else if (assignment->children[1]->token.type != TOK_INT &&
 			   assignment->children[1]->token.type != TOK_BOOL &&
+			   assignment->children[1]->token.type != TOK_LONG &&
 			   assignment->children[1]->token.type != TOK_IDENTIFIER)
 		expression_analysis(assignment->children[1]);
 	else literal_analysis(assignment->children[1]);
@@ -166,6 +170,7 @@ void assignment_analysis(Node *assignment) {
 		find_symbol(sem_table, assignment->children[0]->token.lexeme);
 	const char *type = find_symbol_type(sem_table, idx_type);
 	strncpy(assignment->children[0]->sem_type, type, MAX_SYMBOL_SIZE);
+
 
 	type = compare_types(assignment->children[0], assignment->children[1]);
 	strncpy(assignment->sem_type, type, MAX_SYMBOL_SIZE);
@@ -251,6 +256,10 @@ void literal_analysis(Node *lit) {
 
 		case TOK_FLOAT:
 			strncpy(lit->sem_type, "float", MAX_SYMBOL_SIZE);
+			break;
+
+		case TOK_LONG:
+			strncpy(lit->sem_type, "long", MAX_SYMBOL_SIZE);
 			break;
 
 		case TOK_STR:

@@ -241,7 +241,10 @@ void lex_program(Lexer *lexer, const char *program) {
 			else if (is_reser(&curr, "if", &lex, &col)) tok_type = TOK_IF;
 			else if (is_reser(&curr, "else", &lex, &col)) tok_type = TOK_ELSE;
 			else if (is_reser(&curr, "while", &lex, &col)) tok_type = TOK_WHILE;
+			else if (is_reser(&curr, "null", &lex, &col)) tok_type = TOK_NULL;
 			else if (is_reser(&curr, "int", &lex, &col)) tok_type = TOK_INTTYPE;
+			else if (is_reser(&curr, "long", &lex, &col))
+				tok_type = TOK_LONGTYPE;
 			else if (is_reser(&curr, "void", &lex, &col))
 				tok_type = TOK_VOIDTYPE;
 			else if (is_reser(&curr, "bool", &lex, &col))
@@ -283,9 +286,9 @@ void lex_program(Lexer *lexer, const char *program) {
 			lex[1] = '\0';
 			if ((int)*curr < 128) {
 				start = curr;
-                lex[0] = *start;
+				lex[0] = *start;
 				if (*curr == '\\') {
-                    log_trace("enters");
+					log_trace("enters");
 					curr++;
 					col++;
 					if (*curr == 'n') lex[0] = '\n';
@@ -293,14 +296,15 @@ void lex_program(Lexer *lexer, const char *program) {
 					else if (*curr == 'r') lex[0] = '\r';
 					else if (*curr == '0') lex[0] = '\0';
 					else {
-						log_fatal("not a valid escaped char %i,%i", loc.line, col);
+						log_fatal("not a valid escaped char %i,%i", loc.line,
+								  col);
 						exit(1);
 					}
 				}
 				curr++;
 				col++;
 				if (*curr != '\'') {
-						log_fatal("not a valid char %i,%i", loc.line, col);
+					log_fatal("not a valid char %i,%i", loc.line, col);
 					exit(1);
 				}
 				curr++;

@@ -4,7 +4,7 @@ int limit = 100
 int fizzbuzz() {
 // Will be modify when string literals is available
     while (i < limit) {
-        if(i % 15 == 0){
+        if (i % 15 == 0) {
             print_char('F')
             print_char('i')
             print_char('z')
@@ -13,19 +13,19 @@ int fizzbuzz() {
             print_char('u')
             print_char('z')
             print_char('z')
-            print_char(10)
+            print_char('\n')
         } else if (i % 3 == 0) {
             print_char('F')
             print_char('i')
             print_char('z')
             print_char('z')
-            print_char(10)
+            print_char('\n')
         } else if(i % 5 == 0){
             print_char('B')
             print_char('u')
             print_char('z')
             print_char('z')
-            print_char(10)
+            print_char('\n')
         } else {
             print_int(i)
         }

@@ -8,6 +8,7 @@
 #include "typedef.h"
 
 typedef enum _data_type_e {
+	DT_NULL,
 	DT_VOID,
 	DT_INT,
 	DT_FLOAT,

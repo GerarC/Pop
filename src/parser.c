@@ -149,6 +149,7 @@ Token next_token(Parser *parser) {
 int is_type(Token tok) {
 	switch (tok.type) {
 		case TOK_INTTYPE:
+		case TOK_LONGTYPE:
 		case TOK_BOOLTYPE:
 		case TOK_CHARTYPE:
 		case TOK_VOIDTYPE:
@@ -478,8 +479,9 @@ Node *parse_unary(Parser *parser) {
 Node *parse_literal(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *lit = NULL;
-	if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_BOOL ||
-		tok.type == TOK_CHAR || tok.type == TOK_IDENTIFIER) {
+	if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_LONG ||
+		tok.type == TOK_BOOL || tok.type == TOK_CHAR ||
+		tok.type == TOK_IDENTIFIER) {
 		lit = create_ast_node(tok, NT_LITERAL);
 		peek(parser);
 	} else if (tok.type == TOK_LPAREN) {

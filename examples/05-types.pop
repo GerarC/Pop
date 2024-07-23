@@ -1,4 +1,5 @@
 char c
+long id = 2
 
 void hello_world(){
     c = 'H'

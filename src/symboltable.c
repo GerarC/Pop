@@ -8,6 +8,10 @@ void print_symbol(Symbol *sym);
 void print_table(SymbolTable *table);
 
 void add_symbol(SymbolTable *table, const Symbol symbol) {
+	if (find_symbol(table, symbol.name) != -1) {
+		log_fatal("symbol %s already exists", symbol.name);
+		exit(1);
+	}
 	if (table->count >= table->capacity) {
 		table->capacity *= 2;
 		table->symbols =
@@ -42,7 +46,11 @@ Symbol create_symbol(Node *node, StructureType stype) {
 	if (strcmp(node->sem_type, "void") == 0) dtype = DT_VOID;
 	else if (strcmp(node->sem_type, "int") == 0 || tok.type == TOK_INT)
 		dtype = DT_INT;
-	else if (strcmp(node->sem_type, "char") == 0 || tok.type == TOK_CHAR == 0)
+	else if (strcmp(node->sem_type, "char") == 0 || tok.type == TOK_CHAR)
+		dtype = DT_CHAR;
+	else if (strcmp(node->sem_type, "long") == 0 || tok.type == TOK_LONG)
+		dtype = DT_LONG;
+	else if (strcmp(node->sem_type, "string") == 0 || tok.type == TOK_CHAR)
 		dtype = DT_CHAR;
 	else {
 		log_fatal("%s is not a type: %i", tok.lexeme, tok.type);

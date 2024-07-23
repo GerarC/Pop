@@ -444,6 +444,7 @@ void generate_unitaryop(int index) {
 		case IR_UMINUS:
 			ir->instructions[index].result.data.index = gen_uminus(arg1);
 			break;
+
 		case IR_BINNOT:
 			ir->instructions[index].result.data.index = gen_bin_not(arg1);
 			break;
@@ -461,7 +462,8 @@ void generate_glob_decl(int index) {
 		const char *type = find_symbol_type(nasm_table, idx);
 		if (strcmp(type, "int") == 0) {
 			fprintf(dest, "\tcommon\t%s 8:8\n", op.arg1.data.ident);
-
+		} else if (strcmp(type, "long") == 0) {
+			fprintf(dest, "\tcommon\t%s 16:16\n", op.arg1.data.ident);
 		} else if (strcmp(type, "char") == 0) {
 			fprintf(dest, "\tcommon\t%s 1:1\n", op.arg1.data.ident);
 
