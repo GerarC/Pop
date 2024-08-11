@@ -1,0 +1,10 @@
+int a = 34
+int b
+
+int double_a() {
+    return a * a
+}
+
+b = double_a() - 736
+
+print_int(b)

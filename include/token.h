@@ -51,6 +51,7 @@ typedef enum _token_type_e {
 	// Reserved
 	TOK_NEW,		// New
 	TOK_CLASS,		// Class
+	TOK_RETURN,		// Return
 	TOK_LET,		// Variable
 	TOK_CONST,		// Constant
 	TOK_UNSIGNED,	// Constant

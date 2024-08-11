@@ -29,7 +29,11 @@ void hello_world(){
 hello_world()
 hello_world()
 
+int b = 3 + 5
+print_int(b)
+
 int code = 65
+
 while(code < 123){
     print_char(code)
     code = code + 1

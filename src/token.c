@@ -26,7 +26,7 @@ char *token_string(Token tok) {
 			break;
 
 		case TOK_FLOAT:
-			token_type = strdup("float");
+			token_type = strdup("Float");
 			break;
 
 		case TOK_LPAREN:
@@ -67,9 +67,10 @@ char *token_string(Token tok) {
 
 		case TOK_INTTYPE:
 		case TOK_STRTYPE:
+		case TOK_LONGTYPE:
 		case TOK_CHARTYPE:
 		case TOK_BOOLTYPE:
-			token_type = strdup(tok.lexeme);
+			token_type = strdup("Primitive");
 			break;
 
 		case TOK_BOOL:
@@ -77,32 +78,32 @@ char *token_string(Token tok) {
 			break;
 
 		case TOK_CHAR:
-			token_type = strdup("Char");
+			token_type = strdup("Character");
 			break;
 
 		case TOK_COMMA:
-			token_type = strdup("comma");
+			token_type = strdup("Comma");
 			break;
 
 		case TOK_EQUAL:
 		case TOK_DIFF:
 		case TOK_GEQT:
 		case TOK_LEQT:
-			token_type = strdup("Comparison 'xx'");
+			token_type = strdup("Comp 'xx'");
 			token_type[strlen(token_type) - 3] = ((char *)tok.lexeme)[0];
 			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[1];
 			break;
 
 		case TOK_AND:
 		case TOK_OR:
-			token_type = strdup("Logical 'xx'");
+			token_type = strdup("Logic 'xx'");
 			token_type[strlen(token_type) - 3] = ((char *)tok.lexeme)[0];
 			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[1];
 			break;
 
 		case TOK_GT:
 		case TOK_LT:
-			token_type = strdup("Comparison 'x'");
+			token_type = strdup("Compar 'x'");
 			token_type[strlen(token_type) - 2] = ((char *)tok.lexeme)[0];
 			break;
 
@@ -119,20 +120,31 @@ char *token_string(Token tok) {
 			break;
 
 		case TOK_ELSE:
-			token_type = strdup("else");
+			token_type = strdup("Else");
 			break;
 
 		case TOK_NOT:
-			token_type = strdup("LOGICAL_NOT");
+			token_type = strdup("Logic 'not'");
 			break;
 
 		case TOK_ELN:
-			token_type = strdup("line's end");
+			token_type = strdup("Line's end");
 			break;
 
 		case TOK_EOF:
-			token_type = strdup("file's end");
+			token_type = strdup("File's end");
 			break;
+
+        case TOK_RETURN:
+			token_type = strdup("Return");
+			break;
+
+        case TOK_PRINT_INT: // TEMPORAL
+        case TOK_PRINT_CHAR:
+			token_type = strdup("Print");
+			break;
+            
+            
 
 		default:
 			token_type = strdup("NOT IMPLEMENTED");
@@ -140,7 +152,7 @@ char *token_string(Token tok) {
 	}
 
 		snprintf(tkn_str, sizeof(tkn_str),
-				 "Tk(type: %s, loc: (%i:%i), lex: '%s')", token_type,
+				 "Tk(type: [%s]\tloc: (%i:%i)\tlex: '%s')", token_type,
 				 tok.location.line, tok.location.col, tok.lexeme);
 
 	free(token_type);

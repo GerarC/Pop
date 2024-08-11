@@ -150,9 +150,12 @@ void function_declaration_analysis(Node *fdeclaration) {
 
 void function_usage_analysis(Node *funct) {
 	Token tok = funct->token;
-	const char *type = tok.lexeme;
-	int idx = find_symbol(sem_table, type);
+	const char *sym = tok.lexeme;
+	int idx = find_symbol(sem_table, sym);
 	if (idx == -1) semantic_error("Type doesn't exists", funct);
+	const char *type = find_symbol_type(sem_table, idx);
+	strncpy(funct->sem_type, type, MAX_SYMBOL_SIZE);
+
 	print_symbol_table(sem_table);
 }
 
@@ -171,17 +174,14 @@ void assignment_analysis(Node *assignment) {
 	const char *type = find_symbol_type(sem_table, idx_type);
 	strncpy(assignment->children[0]->sem_type, type, MAX_SYMBOL_SIZE);
 
-
 	type = compare_types(assignment->children[0], assignment->children[1]);
 	strncpy(assignment->sem_type, type, MAX_SYMBOL_SIZE);
 }
 
 void ifwhile_analysis(Node *ifwh) {
 	Token tok = ifwh->token;
-	if (tok.type == TOK_IF) {
-		expression_analysis(ifwh->children[0]);
-		block_analysis(ifwh->children[1]);
-	}
+	expression_analysis(ifwh->children[0]);
+	block_analysis(ifwh->children[1]);
 }
 
 void else_analysis(Node *else_s) {
@@ -196,6 +196,10 @@ void block_analysis(Node *block) {
 
 void expression_analysis(Node *expr) {
 	switch (expr->type) {
+		case NT_FUNC_USAGE:
+			function_usage_analysis(expr);
+			break;
+
 		case NT_BINARYOP:
 			binaryop_analysis(expr);
 			break;

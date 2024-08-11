@@ -31,6 +31,7 @@ void parser_error(char *message, Token tok);
  *          | if_stmt
  *          | function_usage
  *          | while_stmt
+ *          | return_stmt
  *
  *
  * declaration -> type idents tok_eln
@@ -42,6 +43,7 @@ void parser_error(char *message, Token tok);
  *       | assign (',' idents)*
  * assign -> identifier '=' assign*
  *       | expr tok_eln
+ * return_stmt -> 'return' expression
  *
  * if_stmt -> 'if' '('expr')' block_statements else_stmt? tok_eln
  * else_stmt -> else block_statements
@@ -78,6 +80,7 @@ Node *parse_function_declaration(Parser *parser);
 Node *parse_function_arguments(Parser *parser);
 Node *parse_function_usage(Parser *parser);
 Node *parse_function_usage_arguments(Parser *parser);
+Node *parse_return(Parser *parser);
 
 Node *parse_ifwhile(Parser *parser);
 Node *parse_else(Parser *parser);
@@ -188,20 +191,19 @@ Node *parse_program(Parser *parser) {
 
 Node *parse_statement(Parser *parser) {
 	Token tok = current_token(parser);
+    log_trace("token stmt %s", token_string(tok));
 	Node *stmt = NULL;
 	if (tok.type == TOK_LET) stmt = parse_literal(parser);
 	else if (tok.type == TOK_IF || tok.type == TOK_WHILE)
 		stmt = parse_ifwhile(parser);
-	else if (tok.type == TOK_IDENTIFIER &&
-			 next_token(parser).type == TOK_LPAREN)
-		stmt = parse_function_usage(parser);
+	else if (tok.type == TOK_RETURN) stmt = parse_return(parser);
 	else if (tok.type == TOK_ELSE) stmt = parse_else(parser);
 	else if (tok.type == TOK_PRINT_INT) stmt = parse_temp_print_int(parser);
 	else if (tok.type == TOK_PRINT_CHAR) stmt = parse_temp_print_char(parser);
 	else if (tok.type == TOK_IDENTIFIER &&
 			 next_token(parser).type == TOK_ASSIGN)
 		stmt = parse_assign(parser);
-	else if (is_type(tok)) stmt = parse_declaration(parser);
+	else if (is_type(tok) && next_token(parser).type == TOK_IDENTIFIER) stmt = parse_declaration(parser);
 	else { stmt = parse_expression(parser); }
 
 	if (current_token(parser).type == TOK_ELN) peek(parser);
@@ -215,11 +217,13 @@ Node *parse_declaration(Parser *parser) {
 		return parse_function_declaration(parser);
 	else if (next_token(parser).type == TOK_IDENTIFIER)
 		return parse_variable_declaration(parser);
-	parser_error("An identifier expected, this was given:", next_token(parser));
+	parser_error("The last token was given and an identifier was expected", next_token(parser));
 	return NULL;
 }
 
 Node *parse_variable_declaration(Parser *parser) {
+	/*FIXME: Parsing an expression makes that the next token is parse like if is
+	 * a comma*/
 	Token tok = current_token(parser);
 	Node *declaration = create_ast_node(tok, NT_DECLARATION);
 	Node *current = NULL;
@@ -282,6 +286,17 @@ Node *parse_function_usage(Parser *parser) {
 Node *parse_function_usage_arguments(Parser *parser) {
 	log_warn("Parse Function Usage Arguments not implemented");
 	return NULL;
+	peek(parser);
+
+}
+
+Node *parse_return(Parser *parser){
+	Token tok = current_token(parser);
+	Node *return_nd = create_ast_node(tok, NT_RETURN);
+	peek(parser);
+	Node *child = parse_expression(parser);
+    if(child != NULL) add_child(return_nd, child);
+    return return_nd;
 }
 
 Node *parse_idents(Parser *parser) {
@@ -321,6 +336,7 @@ Node *parse_assign(Parser *parser) {
 		tok = current_token(parser);
 	}
 
+	if (parser->tokens[parser->pos - 1].type == TOK_ELN) parser->pos--;
 	if (assign == NULL) return left;
 	return assign;
 }
@@ -479,7 +495,11 @@ Node *parse_unary(Parser *parser) {
 Node *parse_literal(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *lit = NULL;
-	if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_LONG ||
+	if (tok.type == TOK_IDENTIFIER &&
+			 next_token(parser).type == TOK_LPAREN) {
+        lit = parse_function_usage(parser);
+    }
+	else if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_LONG ||
 		tok.type == TOK_BOOL || tok.type == TOK_CHAR ||
 		tok.type == TOK_IDENTIFIER) {
 		lit = create_ast_node(tok, NT_LITERAL);
@@ -522,7 +542,7 @@ void print_helper(Node *root, const char *prefix, int is_left, int is_root) {
 	}
 
 	if (root->token.type == TOK_MAIN) printf(".\n");
-	else if (root->token.type == TOK_BLOCK_GLUE) printf("_\n");
+	else if (root->token.type == TOK_BLOCK_GLUE) printf("{}\n");
 	else if (root->token.lexeme == NULL) printf("null\n");
 	else printf("%s\n", root->token.lexeme);
 

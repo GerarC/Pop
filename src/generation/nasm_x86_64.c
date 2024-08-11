@@ -11,33 +11,9 @@ SymbolTable *nasm_table;
 IntermediateRepresentation *ir;
 void generation_error(const char *message, IrOperation *op);
 
-// Registers stuff begin
-const char *registers[4] = {"r8", "r9", "r10", "r11"};
-char asm_line[MAX_ASM_LINE_SIZE];
-int free_reg[4] = {1, 1, 1, 1};
-
-void deallocate_all_registers() {
-	for (int i = 0; i < 4; i++)
-		free_reg[i] = 1;
-}
-
-static int allocate_register() {
-	for (int i = 0; i < 4; i++)
-		if (free_reg[i] == 1) {
-			free_reg[i] = 0;
-			return i;
-		}
-	generation_error("Not free registers", NULL);
-	return -1;
-}
-
-void deallocate_register(size index) {
-	if (free_reg[index] != 0)
-		generation_error("Error deallocating register", NULL);
-	free_reg[index] = 1;
-}
-// end registers stuff
 char *val_string(IrValue value);
+
+void deallocate_all_registers();
 
 int load_value(IrValue value);
 void move_reg(int r1, int r2);
@@ -63,6 +39,7 @@ void generate_assign(int index);
 void generate_glob_funct(int index);
 void generate_glob_funct_end(int index);
 void generate_glob_funct_usage(int index);
+void generate_return(int index);
 
 /// If and while statements
 void generate_ifdo(int index);
@@ -102,6 +79,34 @@ void generate_nasm_x86_64(const char *destination,
 	fclose(dest);
 }
 
+// Registers stuff begin
+const char *registers[4] = {"r8", "r9", "r10", "r11"};
+const char *bregisters[4] = {"r8b", "r9b", "r10b", "r11b"};
+const char *dregisters[4] = {"r8d", "r9d", "r10d", "r11d"};
+int free_reg[4] = {1, 1, 1, 1};
+
+void deallocate_all_registers() {
+	for (int i = 0; i < 4; i++)
+		free_reg[i] = 1;
+}
+
+static int allocate_register() {
+	for (int i = 0; i < 4; i++)
+		if (free_reg[i] == 1) {
+			free_reg[i] = 0;
+			return i;
+		}
+	generation_error("Not free registers", NULL);
+	return -1;
+}
+
+void deallocate_register(size index) {
+	if (free_reg[index] != 0)
+		generation_error("Error deallocating register", NULL);
+	free_reg[index] = 1;
+}
+// end registers stuff
+
 void generate_operations() {
 	size i;
 	for (i = 0; i < ir->count; i++) {
@@ -111,6 +116,11 @@ void generate_operations() {
 			case IR_DECLARATION:
 				generate_glob_decl(i);
 				break;
+
+			case IR_RETURN:
+				generate_return(i);
+				break;
+
 			case IR_ASSIGNMENT:
 				generate_assign(i);
 				break;
@@ -289,8 +299,32 @@ int load_value(IrValue value) {
 	} else if (value.type == IRVAL_ADDRESS) {
 		return ir->instructions[value.data.index].result.data.index;
 	} else if (value.type == IRVAL_IDENTIFIER) {
+		Symbol sym =
+			get_symbol(nasm_table, find_symbol(nasm_table, value.data.ident));
 		r = allocate_register();
-		fprintf(dest, "\tmov\t%s, %s\n", registers[r], arg);
+		switch (sym.stype) {
+
+			case ST_VARIABLE:
+				fprintf(dest, "\tmov\t%s, %s\n", registers[r], arg);
+				break;
+
+			case ST_FUNCTION:
+				fprintf(dest,
+						"\tcall\t%s\n"
+						"\tmov\t%s, rax\n",
+						value.data.ident, registers[r]);
+				break;
+
+			case ST_ARRAY:
+			case ST_PARAM:
+			case ST_STRUCT:
+			case ST_CLASS:
+			case ST_ENUM:
+			case ST_MEMBER:
+				generation_error("Structure not implemented", NULL);
+				exit(1);
+				break;
+		}
 
 		free(arg);
 		return r;
@@ -497,10 +531,7 @@ void generate_glob_funct(int index) {
 	}
 }
 
-void generate_glob_funct_end(int index) {
-	fprintf(dest, "\tmov\trax, 0\n"
-				  "\tret\n\n");
-}
+void generate_glob_funct_end(int index) { fprintf(dest, "\tret\n\n"); }
 
 void generate_glob_funct_usage(int index) {
 	log_info("enters");
@@ -511,6 +542,13 @@ void generate_glob_funct_usage(int index) {
 		log_info("name");
 		fprintf(dest, "\tcall\t%s\n", name);
 	}
+}
+
+void generate_return(int index) {
+	IrOperation op = ir->instructions[index];
+	int arg1 = load_value(op.arg1);
+	fprintf(dest, "\tmov\trax, %s\n", registers[arg1]);
+	deallocate_register(arg1);
 }
 
 void generate_ifdo(int index) {

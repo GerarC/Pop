@@ -253,6 +253,7 @@ void lex_program(Lexer *lexer, const char *program) {
 				tok_type = TOK_CHARTYPE;
 			else if (is_reser(&curr, "string", &lex, &col))
 				tok_type = TOK_STRTYPE;
+			else if (is_reser(&curr, "return", &lex, &col)) tok_type = TOK_RETURN;
 			else if (is_reser(&curr, "print_int", &lex, &col))
 				tok_type = TOK_PRINT_INT;
 			else if (is_reser(&curr, "print_char", &lex, &col))

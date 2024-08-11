@@ -10,6 +10,7 @@ void statement_ir(IntermediateRepresentation *ir, Node *stmt);
 
 void func_declaration_ir(IntermediateRepresentation *ir, Node *declaration);
 void func_usage_ir(IntermediateRepresentation *ir, Node *declaration);
+void return_ir(IntermediateRepresentation *ir, Node *ret);
 void declaration_ir(IntermediateRepresentation *ir, Node *declaration);
 void assignment_ir(IntermediateRepresentation *ir, Node *assignment);
 
@@ -53,6 +54,10 @@ void statement_ir(IntermediateRepresentation *ir, Node *stmt) {
 
 		case NT_DECLARATION:
 			declaration_ir(ir, stmt);
+			break;
+
+		case NT_RETURN:
+			return_ir(ir, stmt);
 			break;
 
 		case NT_ASSIGNMENT:
@@ -120,7 +125,7 @@ void print_ir(IntermediateRepresentation *ir) {
 
 	printf("begin\n");
 	for (size i = 0; i < ir->count; i++) {
-		printf("%i\t", i);
+		printf("%i", i);
 		IrOperationType type = ir->instructions[i].type;
 		char *arg1 = irval_string(ir->instructions[i].arg1);
 		char *arg2 = irval_string(ir->instructions[i].arg2);
@@ -130,8 +135,12 @@ void print_ir(IntermediateRepresentation *ir) {
 
 		switch (type) {
 			case IR_FUNCT_DECLARATION:
+				strcpy(operation, "funct");
+				printf("\t%s %s", operation, arg1);
+				break;
+
 			case IR_DECLARATION:
-				strcpy(operation, "create");
+				strcpy(operation, "variable");
 				printf("\t%s %s", operation, arg1);
 				break;
 
@@ -142,6 +151,11 @@ void print_ir(IntermediateRepresentation *ir) {
 
 			case IR_FUNCT_USAGE:
 				strcpy(operation, "using");
+				printf("\t%s %s", operation, arg1);
+				break;
+
+			case IR_RETURN:
+				strcpy(operation, "return");
 				printf("\t%s %s", operation, arg1);
 				break;
 
@@ -368,6 +382,15 @@ void func_usage_ir(IntermediateRepresentation *ir, Node *function) {
 	IrOperation op = {.type = IR_FUNCT_USAGE, .result = result};
 	op.arg1.type = IRVAL_IDENTIFIER;
 	strncpy(op.arg1.data.ident, function->token.lexeme, MAX_SYMBOL_SIZE);
+	add_iroperation(ir, op);
+}
+
+void return_ir(IntermediateRepresentation *ir, Node *ret) {
+	IrValue result = {.type = IRVAL_ADDRESS, .data.index = ir->count};
+	IrOperation op = {.type = IR_RETURN, .result = result};
+	op.arg1.type = IRVAL_ADDRESS;
+	expression_ir(ir, ret->children[0]);
+	op.arg1.data.index = ir->count - 1;
 	add_iroperation(ir, op);
 }
 
