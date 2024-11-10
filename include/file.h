@@ -2,15 +2,15 @@
 #define FILE_H
 
 #include "config.h"
-/* Reads the file from the given source. If the file exists
- * will storage all the code lines that exist in.
+/* Reads the file from given source. If file exists
+ * will storage into a char* the whole content.
  *
  * Input:
- *  source: path of the file.
+ * - source: path of the file.
  *
  * Returns:
- *  code (char): the readed code. must be freed
+ * - code (char): the readed code. must be freed
  * */
-char* read_file(const char *source);
+char *read_file(const char *source);
 
 #endif // FILE_H

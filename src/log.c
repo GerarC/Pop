@@ -4,15 +4,6 @@
 #include <string.h>
 #include <time.h>
 
-// Colors
-#define COLOR_TRACE "\x1B[34m"
-#define COLOR_DEBUG "\x1B[36m"
-#define COLOR_INFO "\x1B[32m"
-#define COLOR_WARN "\x1B[33m"
-#define COLOR_ERROR "\x1B[31m"
-#define COLOR_FATAL "\x1B[35m"
-#define COLOR_RESET "\033[0m"
-
 void logger(LogType type, const char *file, const int line, const char *message,
 			...) {
 	if (type < LOG_LEVEL) return;
@@ -58,7 +49,7 @@ void logger(LogType type, const char *file, const int line, const char *message,
 	}
 
 	if (PRINT_COLORS) fprintf(output, "%s%s [%s]", color, date, tag);
-	else fprintf(output, "%s [%s] %s: ", date, tag, file);
+	else fprintf(output, "%s [%s]", date, tag);
 
 	if (PRINT_FILE) fprintf(output, " %s:", file);
 

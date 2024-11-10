@@ -1,12 +1,30 @@
 #include "../include/lexer.h"
+#include "../include/constant/common_constants.h"
+#include "../include/constant/lexer_constants.h"
 #include "../include/log.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+void lexer_error(char *message, int line, int column);
+
+int is_end_of_line(char c);
+int is_end_of_string(char c);
+int is_math_operator(char c);
+int is_bit_operator(char c);
+int is_comparator(char c);
+int is_grouping_symbol(char c);
+int is_text(char c);
+
+TokenType get_math_operator_char_type(char c);
+TokenType get_bit_operator_char_type(char c);
+TokenType get_comparator_char_type(char c);
+TokenType get_grouping_char_type(char c);
+TokenType get_text_type(const char **text, char **dest, int *col);
+
 void lex_program(Lexer *lexer, const char *program) {
-	log_info("Lexical analysis");
+	log_info(LEXER_BEGIN_MESSAGE);
 
 	// Loop needed
 	const char *curr = program;
@@ -17,14 +35,14 @@ void lex_program(Lexer *lexer, const char *program) {
 	strlcpy(loc.file, lexer->source, MAX_FILENAME_SIZE);
 	int col = 0;
 
-	while (*curr != '\0') {
+	while (!is_end_of_string(*curr)) {
 		start = curr;
 		tok_type = TOK_INVALID;
 
-		if (*curr == '\n') {
+		if (is_end_of_line(*curr)) {
 			loc.col = col;
 			curr++;
-			char *lex = strdup("eln");
+			char *lex = strdup(LEXER_TOKEN_END_OF_LINE);
 
 			if (col == 0) {
 				loc.line++;
@@ -59,6 +77,7 @@ void lex_program(Lexer *lexer, const char *program) {
 				if (*curr == 'E' && !e_notation) {
 					curr++;
 					col++;
+					e_notation = 1;
 					goto lex_program_float_E_notation;
 				}
 			}
@@ -83,15 +102,8 @@ void lex_program(Lexer *lexer, const char *program) {
 			/*Create a token and put it in the list*/
 			add_token(lexer, tok_type, loc, curr - start, lexeme, val);
 
-		} else if (*curr == '+' || *curr == '-' || *curr == '*' ||
-				   *curr == '/' || *curr == '%') {
-			// Operations
-			if (*curr == '+') tok_type = TOK_PLUS;
-			else if (*curr == '-') tok_type = TOK_MINUS;
-			else if (*curr == '*') tok_type = TOK_STAR;
-			else if (*curr == '/') tok_type = TOK_SLASH;
-			else if (*curr == '%') tok_type = TOK_MOD;
-			else tok_type = TOK_INVALID;
+		} else if (is_math_operator(*curr)) {
+			tok_type = get_math_operator_char_type(*curr);
 
 			loc.col = col;
 			curr++;
@@ -114,12 +126,8 @@ void lex_program(Lexer *lexer, const char *program) {
 			lexeme[len] = '\0';
 
 			add_token(lexer, tok_type, loc, curr - start, lexeme, NULL);
-		} else if (*curr == '<' || *curr == '>' || *curr == '!') {
-			// Comparators
-			if (*curr == '<') tok_type = TOK_LT;
-			else if (*curr == '>') tok_type = TOK_GT;
-			else if (*curr == '!') tok_type = TOK_NOT;
-			else tok_type = TOK_INVALID;
+		} else if (is_comparator(*curr)) {
+			tok_type = get_comparator_char_type(*curr);
 
 			start = curr;
 			loc.col = col;
@@ -205,18 +213,8 @@ void lex_program(Lexer *lexer, const char *program) {
 
 			add_token(lexer, tok_type, loc, curr - start, lex, NULL);
 
-		} else if (*curr == '(' || *curr == ')' || *curr == '{' ||
-				   *curr == '}' || *curr == '[' || *curr == ']' ||
-				   *curr == '<' || *curr == '>') { // Math simbols
-			if (*curr == '(') tok_type = TOK_LPAREN;
-			else if (*curr == ')') tok_type = TOK_RPAREN;
-			else if (*curr == '{') tok_type = TOK_LCURLY;
-			else if (*curr == '}') tok_type = TOK_RCURLY;
-			else if (*curr == '[') tok_type = TOK_LBRACE;
-			else if (*curr == ']') tok_type = TOK_RBRACE;
-			else if (*curr == '<') tok_type = TOK_LANGLE;
-			else if (*curr == '>') tok_type = TOK_RANGLE;
-			else tok_type = TOK_INVALID;
+		} else if (is_grouping_symbol(*curr)) { // Grouping
+			tok_type = get_grouping_char_type(*curr);
 
 			start = curr;
 			loc.col = col;
@@ -228,37 +226,11 @@ void lex_program(Lexer *lexer, const char *program) {
 			lex[1] = '\0';
 
 			add_token(lexer, tok_type, loc, curr - start, lex, NULL);
-		} else if (isalpha(*curr) || *curr == '_') {
+		} else if (is_text(*curr)) {
 			start = curr;
 			loc.col = col;
 			char *lex = NULL;
-			if (is_reser(&curr, "true", &lex, &col) ||
-				is_reser(&curr, "false", &lex, &col))
-				tok_type = TOK_BOOL;
-			else if (is_reser(&curr, "and", &lex, &col)) tok_type = TOK_AND;
-			else if (is_reser(&curr, "or", &lex, &col)) tok_type = TOK_OR;
-			else if (is_reser(&curr, "not", &lex, &col)) tok_type = TOK_NOT;
-			else if (is_reser(&curr, "if", &lex, &col)) tok_type = TOK_IF;
-			else if (is_reser(&curr, "else", &lex, &col)) tok_type = TOK_ELSE;
-			else if (is_reser(&curr, "while", &lex, &col)) tok_type = TOK_WHILE;
-			else if (is_reser(&curr, "null", &lex, &col)) tok_type = TOK_NULL;
-			else if (is_reser(&curr, "int", &lex, &col)) tok_type = TOK_INTTYPE;
-			else if (is_reser(&curr, "long", &lex, &col))
-				tok_type = TOK_LONGTYPE;
-			else if (is_reser(&curr, "void", &lex, &col))
-				tok_type = TOK_VOIDTYPE;
-			else if (is_reser(&curr, "bool", &lex, &col))
-				tok_type = TOK_BOOLTYPE;
-			else if (is_reser(&curr, "char", &lex, &col))
-				tok_type = TOK_CHARTYPE;
-			else if (is_reser(&curr, "string", &lex, &col))
-				tok_type = TOK_STRTYPE;
-			else if (is_reser(&curr, "return", &lex, &col)) tok_type = TOK_RETURN;
-			else if (is_reser(&curr, "print_int", &lex, &col))
-				tok_type = TOK_PRINT_INT;
-			else if (is_reser(&curr, "print_char", &lex, &col))
-				tok_type = TOK_PRINT_CHAR;
-			else tok_type = TOK_IDENTIFIER;
+			tok_type = get_text_type(&curr, &lex, &col);
 
 			if ((isalpha(*curr) || isdigit(*curr) || *curr == '_') &&
 				tok_type != TOK_IDENTIFIER) {
@@ -296,24 +268,18 @@ void lex_program(Lexer *lexer, const char *program) {
 					else if (*curr == 't') lex[0] = '\t';
 					else if (*curr == 'r') lex[0] = '\r';
 					else if (*curr == '0') lex[0] = '\0';
-					else {
-						log_fatal("not a valid escaped char %i,%i", loc.line,
-								  col);
-						exit(1);
-					}
+					else
+						lexer_error(LEXER_NOT_VALID_ESCAPED_CHAR_MESSAGE,
+									loc.line, col);
 				}
 				curr++;
 				col++;
-				if (*curr != '\'') {
-					log_fatal("not a valid char %i,%i", loc.line, col);
-					exit(1);
-				}
+				if (*curr != '\'')
+					lexer_error(LEXER_NOT_VALID_CHAR_MESSAGE, loc.line, col);
+
 				curr++;
 				col++;
-			} else {
-				log_fatal("not a valid char");
-				exit(1);
-			}
+			} else lexer_error(LEXER_NOT_VALID_CHAR_MESSAGE, loc.line, col);
 
 			add_token(lexer, tok_type, loc, 1, lex, NULL);
 
@@ -355,7 +321,7 @@ void lex_program(Lexer *lexer, const char *program) {
 		}
 	}
 
-	add_token(lexer, TOK_EOF, loc, 1, strdup("eof"), NULL);
+	add_token(lexer, TOK_EOF, loc, 1, strdup(LEXER_TOKEN_END_OF_FILE), NULL);
 }
 
 int is_reser(const char **curr, const char *rword, char **dest, int *col) {
@@ -391,16 +357,16 @@ void add_token(Lexer *lexer, TokenType type, SourceLocation loc, int len,
 
 void print_lexer(Lexer *lex) {
 	if (LOG_DEBUG < LOG_LEVEL) return;
-	log_debug("Lexical Analysis:");
+	log_debug(LEXER_DEBUG_PRINT_MESSAGE);
 	for (int i = 0; i < lex->count; i++)
-		printf("\t%s\n", token_string(lex->tokens[i]));
+		printf(LEXER_DEBUG_TOKEN_STRING_TEMPLATE, token_string(lex->tokens[i]));
 }
 
 void free_lexer(Lexer lex) {
 	for (int i = 0; i < lex.count; i++)
 		free_token(&lex.tokens[i]);
 	free(lex.tokens);
-	log_info("lexer cleaned");
+	log_info(LEXER_DEBUG_CLEANED_MESSAGE);
 }
 
 Lexer create_lexer(const char *source) {
@@ -410,4 +376,87 @@ Lexer create_lexer(const char *source) {
 	strlcpy(lex.source, source, MAX_FILE_SIZE);
 
 	return lex;
+}
+
+void lexer_error(char *message, int line, int column) {
+	log_fatal(LEXER_ERROR_MESSAGE_TEMPLATE, message, line, column);
+	exit(1);
+}
+
+int is_end_of_line(char c) { return c == '\n'; }
+
+int is_end_of_string(char c) { return c == '\0'; }
+
+int is_math_operator(char c) {
+	return c == '+' || c == '-' || c == '*' || c == '/' || c == '%';
+}
+
+int is_bit_operator(char c);
+
+int is_comparator(char c) { return c == '<' || c == '>' || c == '!'; }
+
+int is_grouping_symbol(char c) {
+	return c == '(' || c == ')' || c == '{' || c == '}' || c == '[' ||
+		   c == ']' || c == '<' || c == '>';
+}
+
+int is_text(char c) { return isalpha(c) || c == '_'; }
+
+TokenType get_math_operator_char_type(char c) {
+	TokenType tok_type = TOK_INVALID;
+	if (c == '+') tok_type = TOK_PLUS;
+	else if (c == '-') tok_type = TOK_MINUS;
+	else if (c == '*') tok_type = TOK_STAR;
+	else if (c == '/') tok_type = TOK_SLASH;
+	else if (c == '%') tok_type = TOK_MOD;
+	return tok_type;
+}
+
+TokenType get_bit_operator_char_type(char c);
+
+TokenType get_comparator_char_type(char c) {
+	TokenType tok_type = TOK_INVALID;
+	if (c == '<') tok_type = TOK_LT;
+	else if (c == '>') tok_type = TOK_GT;
+	else if (c == '!') tok_type = TOK_NOT;
+	return tok_type;
+}
+
+TokenType get_grouping_char_type(char c) {
+	TokenType tok_type = TOK_INVALID;
+	if (c == '(') tok_type = TOK_LPAREN;
+	else if (c == ')') tok_type = TOK_RPAREN;
+	else if (c == '{') tok_type = TOK_LCURLY;
+	else if (c == '}') tok_type = TOK_RCURLY;
+	else if (c == '[') tok_type = TOK_LBRACE;
+	else if (c == ']') tok_type = TOK_RBRACE;
+	else if (c == '<') tok_type = TOK_LANGLE;
+	else if (c == '>') tok_type = TOK_RANGLE;
+	return tok_type;
+}
+
+TokenType get_text_type(const char **text, char **dest, int *col) {
+	TokenType tok_type = TOK_IDENTIFIER;
+	if (is_reser(text, RESERVED_TRUE, dest, col) ||
+		is_reser(text, RESERVED_FALSE, dest, col))
+		tok_type = TOK_BOOL;
+	else if (is_reser(text, RESERVED_AND, dest, col)) tok_type = TOK_AND;
+	else if (is_reser(text, RESERVED_OR, dest, col)) tok_type = TOK_OR;
+	else if (is_reser(text, RESERVED_NOT, dest, col)) tok_type = TOK_NOT;
+	else if (is_reser(text, RESERVED_IF, dest, col)) tok_type = TOK_IF;
+	else if (is_reser(text, RESERVED_ELSE, dest, col)) tok_type = TOK_ELSE;
+	else if (is_reser(text, RESERVED_WHILE, dest, col)) tok_type = TOK_WHILE;
+	else if (is_reser(text, RESERVED_NULL, dest, col)) tok_type = TOK_NULL;
+	else if (is_reser(text, RESERVED_INT, dest, col)) tok_type = TOK_INTTYPE;
+	else if (is_reser(text, RESERVED_LONG, dest, col)) tok_type = TOK_LONGTYPE;
+	else if (is_reser(text, RESERVED_VOID, dest, col)) tok_type = TOK_VOIDTYPE;
+	else if (is_reser(text, RESERVED_BOOL, dest, col)) tok_type = TOK_BOOLTYPE;
+	else if (is_reser(text, RESERVED_CHAR, dest, col)) tok_type = TOK_CHARTYPE;
+	else if (is_reser(text, RESERVED_STRING, dest, col)) tok_type = TOK_STRTYPE;
+	else if (is_reser(text, RESERVED_RETURN, dest, col)) tok_type = TOK_RETURN;
+	else if (is_reser(text, RESERVED_PRINT_INT, dest, col))
+		tok_type = TOK_PRINT_INT;
+	else if (is_reser(text, RESERVED_PRINT_CHAR, dest, col))
+		tok_type = TOK_PRINT_CHAR;
+	return tok_type;
 }
