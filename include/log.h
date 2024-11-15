@@ -9,7 +9,7 @@
 #define LOG_COLOR_SIZE 8
 #define PRINT_FILE 1
 #define PRINT_LINE 1
-#define PRINT_COLORS 0
+#define PRINT_COLORS 1
 #define LOG_LEVEL 0 // the most lower level the most log types are printed
 
 // Colors
@@ -20,6 +20,23 @@
 #define COLOR_ERROR "\x1B[31m"
 #define COLOR_FATAL "\x1B[35m"
 #define COLOR_RESET "\033[0m"
+
+// Constants
+#define LOG_TEXT_TRACE "TRACE"
+#define LOG_TEXT_DEBUG "DEBUG"
+#define LOG_TEXT_INFO  "INFO "
+#define LOG_TEXT_WARN  "WARN "
+#define LOG_TEXT_ERROR "ERROR"
+#define LOG_TEXT_FATAL "FATAL"
+#define LOG_TEXT_RESET "RESET"
+
+#define LOG_OUTPUT_TAG_COLORED  "%s%s [%s]"
+#define LOG_OUTPUT_TAG  "%s [%s]"
+#define LOG_OUTPUT_FILE " %s:"
+#define LOG_OUTPUT_LINE "%u: "
+#define LOG_OUTPUT_COLON ": "
+#define LOG_OUTPUT_FINAL_COLOR "%s"
+
 
 typedef enum LogType {
 	LOG_TRACE,

@@ -1,6 +1,6 @@
 #include "../include/lexer.h"
-#include "../include/constant/common_constants.h"
-#include "../include/constant/lexer_constants.h"
+#include "../include/constant/common.constants.h"
+#include "../include/constant/lexer.constants.h"
 #include "../include/log.h"
 #include <ctype.h>
 #include <stdio.h>

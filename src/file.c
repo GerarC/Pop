@@ -1,6 +1,6 @@
 #include "../include/file.h"
-#include "../include/constant/file_constants.h"
-#include "../include/constant/common_constants.h"
+#include "../include/constant/file.constants.h"
+#include "../include/constant/common.constants.h"
 #include "../include/log.h"
 #include <stdio.h>
 #include <stdlib.h>

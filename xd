@@ -1,0 +1,82 @@
+BITS 64
+
+;  ---------- Initializate program ----------
+section .text
+	global _start
+print_int:
+	mov	r9, -3689348814741910323
+	sub	rsp, 40
+	mov	BYTE [rsp+31], 10
+	lea	rcx, [rsp+30]
+.L2:
+	mov	rax, rdi
+	lea	r8, [rsp+32]
+	mul	r9
+	mov	rax, rdi
+	sub	r8, rcx
+	shr	rdx, 3
+	lea	rsi, [rdx+rdx*4]
+	add	rsi, rsi
+	sub	rax, rsi
+	add	eax, 48
+	mov	BYTE [rcx], al
+	mov	rax, rdi
+	mov	rdi, rdx
+	mov	rdx, rcx
+	sub	rcx, 1
+	cmp	rax, 9
+	ja 	.L2
+	lea	rax, [rsp+32]
+	mov	edi, 1
+	sub	rdx, rax
+	xor	eax, eax
+	lea	rsi, [rsp+32+rdx]
+	mov	rdx, r8
+	mov	rax, 1
+	syscall
+	add     rsp, 40
+	ret
+
+print_char:
+	push	rdi
+	mov	edi, 1
+	mov	rax, 1
+	mov	rsi, rsp
+	mov	rdx, 1
+	syscall
+	add	rsp, 8
+	ret
+
+	common	b 8:8
+_start:
+	push	rbp
+	mov	rbp, rsp
+	mov	r8, 0x2D
+	mov	rdi, r8
+	call	print_char
+	mov	r8, 0xA
+	mov	rdi, r8
+	call	print_char
+	mov	r8, [b]
+	test	r8, r8
+	jz	.POP4
+	mov	r8, 0x45
+	mov	rdi, r8
+	call	print_int
+	jmp	.POP6
+.POP4:
+	mov	r8, 0x29A
+	mov	rdi, r8
+	call	print_int
+.POP6:
+	mov	r8, 0x2D
+	mov	rdi, r8
+	call	print_char
+	mov	r8, 0xA
+	mov	rdi, r8
+	call	print_char
+
+;  ---------- Terminate program ----------
+	mov	eax, 1
+	mov	ebx, 0
+	int	80h

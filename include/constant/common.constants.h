@@ -25,4 +25,8 @@
 #define RESERVED_PRINT_INT "print_int"
 #define RESERVED_PRINT_CHAR "print_char"
 
+// Error
+#define EXIT_SUCCESSFUL_CODE 0
+#define EXIT_ERROR_CODE 1
+
 #endif // COMMON_CONSTANTS_H

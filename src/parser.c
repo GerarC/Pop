@@ -1,4 +1,6 @@
 #include "../include/parser.h"
+#include "../include/constant/common.constants.h"
+#include "../include/constant/parser.constants.h"
 #include "../include/log.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,10 +118,11 @@ Node *create_ast_node(Token tok, NodeType type) {
 
 void add_child(Node *parent, Node *child) {
 	if (parent == NULL) {
-		log_fatal("parent must exists");
-		exit(1);
+		log_fatal(PARSER_ERROR_NOT_PARENT_NODE_TO_ADD_MESSAGE);
+		exit(EXIT_ERROR_CODE);
 	}
-	if (child == NULL) parser_error("Child of %s must exists", child->token);
+	if (child == NULL)
+		parser_error(PARSER_ERROR_NOT_CHILD_PROVIDED_MESSAGE, child->token);
 
 	if (parent->child_count >= parent->capacity) {
 		parent->capacity *= 2;
@@ -169,8 +172,9 @@ void peek(Parser *parser) {
 }
 
 Node *parse_program(Parser *parser) {
-	log_info("Syntactic analysis");
-	Token tok = {TOK_MAIN, parser->tokens[0].location, 1, "main .", NULL};
+	log_info(PARSER_DEBUG_PROCESS_STARTS);
+	Token tok = {TOK_MAIN, parser->tokens[0].location, 1,
+				 PARSER_DEFAULT_MAIN_LEXEME, NULL};
 
 	Node *current = NULL;
 	Node *statements = create_ast_node(tok, NT_MAIN);
@@ -181,7 +185,7 @@ Node *parse_program(Parser *parser) {
 		if (current != NULL) {
 			add_child(statements, current);
 		} else {
-			parser_error("Error parsing statement at program",
+			parser_error(PARSER_ERROR_NOT_PARSED_TOKENS_AT_PROGRAM_MESSAGE,
 						 statements->token);
 		}
 	}
@@ -191,7 +195,7 @@ Node *parse_program(Parser *parser) {
 
 Node *parse_statement(Parser *parser) {
 	Token tok = current_token(parser);
-    log_trace("token stmt %s", token_string(tok));
+	log_trace(PARSER_DEBUG_TOKEN_TEMPLATE, token_string(tok));
 	Node *stmt = NULL;
 	if (tok.type == TOK_LET) stmt = parse_literal(parser);
 	else if (tok.type == TOK_IF || tok.type == TOK_WHILE)
@@ -203,7 +207,8 @@ Node *parse_statement(Parser *parser) {
 	else if (tok.type == TOK_IDENTIFIER &&
 			 next_token(parser).type == TOK_ASSIGN)
 		stmt = parse_assign(parser);
-	else if (is_type(tok) && next_token(parser).type == TOK_IDENTIFIER) stmt = parse_declaration(parser);
+	else if (is_type(tok) && next_token(parser).type == TOK_IDENTIFIER)
+		stmt = parse_declaration(parser);
 	else { stmt = parse_expression(parser); }
 
 	if (current_token(parser).type == TOK_ELN) peek(parser);
@@ -217,7 +222,8 @@ Node *parse_declaration(Parser *parser) {
 		return parse_function_declaration(parser);
 	else if (next_token(parser).type == TOK_IDENTIFIER)
 		return parse_variable_declaration(parser);
-	parser_error("The last token was given and an identifier was expected", next_token(parser));
+	parser_error(PARSER_ERROR_AN_IDENTIFIER_WAS_EXPECTED_MESSAGE,
+				 next_token(parser));
 	return NULL;
 }
 
@@ -231,10 +237,12 @@ Node *parse_variable_declaration(Parser *parser) {
 	while (current_token(parser).type != TOK_ELN) {
 		current = parse_idents(parser);
 		if (current != NULL) add_child(declaration, current);
-		else parser_error("Error parsing declaration of %s", tok);
+		else parser_error(PARSER_ERROR_WRONG_IDENTIFIER_FORMAT_MESSAGE, tok);
+		;
 		if (current_token(parser).type == TOK_COMMA) peek(parser);
 		else if (current_token(parser).type != TOK_ELN)
-			parser_error("There must be a comma", current_token(parser));
+			parser_error(PARSER_ERROR_COMMA_EXPECTED_MESSAGE,
+						 current_token(parser));
 	}
 
 	return declaration;
@@ -252,7 +260,7 @@ Node *parse_function_declaration(Parser *parser) {
 		peek(parser);
 		if (current_token(parser).type == TOK_RPAREN) peek(parser);
 		else
-			parser_error("A ')' expected in function declaration",
+			parser_error(PARSER_ERROR_CLOSING_PARENTHESIS_EXPECTED_MESSAGE,
 						 next_token(parser));
 	}
 	Node *block = get_block_statements(parser);
@@ -276,7 +284,7 @@ Node *parse_function_usage(Parser *parser) {
 		peek(parser);
 		if (current_token(parser).type == TOK_RPAREN) peek(parser);
 		else
-			parser_error("A ')' expected in function declaration",
+			parser_error(PARSER_ERROR_CLOSING_PARENTHESIS_EXPECTED_MESSAGE,
 						 next_token(parser));
 	}
 
@@ -287,16 +295,15 @@ Node *parse_function_usage_arguments(Parser *parser) {
 	log_warn("Parse Function Usage Arguments not implemented");
 	return NULL;
 	peek(parser);
-
 }
 
-Node *parse_return(Parser *parser){
+Node *parse_return(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *return_nd = create_ast_node(tok, NT_RETURN);
 	peek(parser);
 	Node *child = parse_expression(parser);
-    if(child != NULL) add_child(return_nd, child);
-    return return_nd;
+	if (child != NULL) add_child(return_nd, child);
+	return return_nd;
 }
 
 Node *parse_idents(Parser *parser) {
@@ -331,7 +338,7 @@ Node *parse_assign(Parser *parser) {
 		add_child(assign, left);
 		right = parse_assign(parser);
 		if (right != NULL) add_child(assign, right);
-		else parser_error("Error creating right child", tok);
+		else parser_error(PARSER_ERROR_WRONG_ASSIGNMENT_PARSING_MESSAGE, tok);
 		left = assign;
 		tok = current_token(parser);
 	}
@@ -355,7 +362,7 @@ Node *parse_ifwhile(Parser *parser) {
 
 		if (current_token(parser).type == TOK_RPAREN) peek(parser);
 		else
-			parser_error("A ')' expected in  if or while statement",
+			parser_error(PARSER_ERROR_CLOSING_PARENTHESIS_EXPECTED_MESSAGE,
 						 current_token(parser));
 
 		add_child(stmt, current);
@@ -400,7 +407,9 @@ Node *parse_equality(Parser *parser) {
 		add_child(equal, left);
 		right = parse_comparison(parser);
 		if (right != NULL) add_child(equal, right);
-		else parser_error("Error creating right child", tok);
+		else
+			parser_error(
+				PARSER_ERROR_WRONG_COMPARISON_STATEMENT_PARSING_MESSAGE, tok);
 
 		left = equal;
 		tok = current_token(parser);
@@ -424,7 +433,9 @@ Node *parse_comparison(Parser *parser) {
 		add_child(comp, left);
 		right = parse_term(parser);
 		if (right != NULL) add_child(comp, right);
-		else parser_error("Error creating right child", tok);
+		else
+			parser_error(PARSER_ERROR_WRONG_TERM_STATEMENT_PARSING_MESSAGE,
+						 tok);
 
 		left = comp;
 		tok = current_token(parser);
@@ -446,7 +457,9 @@ Node *parse_term(Parser *parser) {
 		add_child(term, left);
 		right = parse_factor(parser);
 		if (right != NULL) add_child(term, right);
-		else parser_error("Error creating right child", tok);
+		else
+			parser_error(PARSER_ERROR_WRONG_FACTOR_STATEMENT_PARSING_MESSAGE,
+						 tok);
 
 		left = term;
 		tok = current_token(parser);
@@ -468,7 +481,9 @@ Node *parse_factor(Parser *parser) {
 		add_child(fact, left);
 		right = parse_unary(parser);
 		if (right != NULL) add_child(fact, right);
-		else parser_error("Error creating right child", tok);
+		else
+			parser_error(PARSER_ERROR_WRONG_UNITARY_STATEMENT_PARSING_MESSAGE,
+						 tok);
 
 		left = fact;
 		tok = current_token(parser);
@@ -495,13 +510,11 @@ Node *parse_unary(Parser *parser) {
 Node *parse_literal(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *lit = NULL;
-	if (tok.type == TOK_IDENTIFIER &&
-			 next_token(parser).type == TOK_LPAREN) {
-        lit = parse_function_usage(parser);
-    }
-	else if (tok.type == TOK_INT || tok.type == TOK_FLOAT || tok.type == TOK_LONG ||
-		tok.type == TOK_BOOL || tok.type == TOK_CHAR ||
-		tok.type == TOK_IDENTIFIER) {
+	if (tok.type == TOK_IDENTIFIER && next_token(parser).type == TOK_LPAREN) {
+		lit = parse_function_usage(parser);
+	} else if (tok.type == TOK_INT || tok.type == TOK_FLOAT ||
+			   tok.type == TOK_LONG || tok.type == TOK_BOOL ||
+			   tok.type == TOK_CHAR || tok.type == TOK_IDENTIFIER) {
 		lit = create_ast_node(tok, NT_LITERAL);
 		peek(parser);
 	} else if (tok.type == TOK_LPAREN) {
@@ -510,18 +523,18 @@ Node *parse_literal(Parser *parser) {
 
 		if (current_token(parser).type == TOK_RPAREN) peek(parser);
 		else
-			parser_error("An ') before the end of the line expected",
+			parser_error(PARSER_ERROR_CLOSING_PARENTHESIS_EXPECTED_MESSAGE,
 						 current_token(parser));
 
-	} else parser_error("unexpected token", tok);
+	} else parser_error(PARSER_ERROR_UNEXPECTED_LITERAL_TOKEN, tok);
 
 	return lit;
 }
 
 void parser_error(char *message, Token tok) {
-	log_fatal("%s:%i:%i '%s': %s", tok.location.file, tok.location.line,
-			  tok.location.col, tok.lexeme, message);
-	exit(1);
+	log_fatal(PARSER_ERROR_MESSAGE_TEMPLATE, tok.location.file,
+			  tok.location.line, tok.location.col, tok.lexeme, message);
+	exit(EXIT_ERROR_CODE);
 }
 
 /* Prints the given AST, Receives the root node, a prefix used in the printing
@@ -529,22 +542,26 @@ void parser_error(char *message, Token tok) {
  * finally set as true 'is_root'.
  * */
 void print_helper(Node *root, const char *prefix, int is_left, int is_root) {
-	char new_prefix[1024];
+	char new_prefix[PARSER_PRINT_MAX_PREFIX_SIZE];
 	int not_final = 1;
 
 	if (!is_root) {
-		printf("%s", prefix);
-		printf("%s", is_left ? "├─ " : "└─ ");
+		printf(PARSER_PRINT_PREFIX_TEMPLATE, prefix);
+		printf(PARSER_PRINT_PREFIX_TEMPLATE,
+			   is_left ? PARSER_PRINT_CONNECTION_LEFT
+					   : PARSER_PRINT_CONNECTION_RIGHT);
 		strcpy(new_prefix, prefix);
-		strcat(new_prefix, is_left ? "│  " : "   ");
+		strcat(new_prefix,
+			   is_left ? PARSER_PRINT_PREFIX_LEFT : PARSER_PRINT_PREFIX_RIGHT);
 	} else {
-		new_prefix[0] = '\0';
+		new_prefix[0] = FINAL_CHAR;
 	}
 
-	if (root->token.type == TOK_MAIN) printf(".\n");
-	else if (root->token.type == TOK_BLOCK_GLUE) printf("{}\n");
-	else if (root->token.lexeme == NULL) printf("null\n");
-	else printf("%s\n", root->token.lexeme);
+	if (root->token.type == TOK_MAIN) printf(PARSER_PRINT_TOKEN_MAIN);
+	else if (root->token.type == TOK_BLOCK_GLUE)
+		printf(PARSER_PRINT_TOKEN_BLOCK_GLUE);
+	else if (root->token.lexeme == NULL) printf(PARSER_PRINT_TOKEN_NULL);
+	else printf(PARSER_PRINT_TOKEN_TEMPLATE, root->token.lexeme);
 
 	for (int i = 0; i < root->child_count; i++) {
 		if (i == root->child_count - 1) not_final = 0;
@@ -554,7 +571,7 @@ void print_helper(Node *root, const char *prefix, int is_left, int is_root) {
 
 void print_ast(Node *root) {
 	if (LOG_DEBUG < LOG_LEVEL) return;
-	log_debug("Print AST");
+	log_debug(PARSER_DEBUG_PRINT_AST);
 	if (root == NULL) return;
 	print_helper(root, "", 0, 1);
 	printf("\n");
@@ -572,8 +589,8 @@ void free_ast(Node *root) {
 }
 
 Node *get_block_statements(Parser *parser) {
-	Token tok = {TOK_BLOCK_GLUE, current_token(parser).location, 0, "glue",
-				 NULL};
+	Token tok = {TOK_BLOCK_GLUE, current_token(parser).location, 0,
+				 PARSER_DEFAULT_GLUE_LEXEME, NULL};
 	Node *block_stmt = create_ast_node(tok, NT_BLOCK_STATEMENTS);
 	Node *current = NULL;
 	if (current_token(parser).type == TOK_LCURLY) {
@@ -583,17 +600,23 @@ Node *get_block_statements(Parser *parser) {
 			   current_token(parser).type != TOK_RCURLY) {
 			current = parse_statement(parser);
 			if (current != NULL) add_child(block_stmt, current);
-			else parser_error("Creating statement", current_token(parser));
+			else
+				parser_error(PARSER_ERROR_WRONG_STATEMENT_FORMAT,
+							 current_token(parser));
 		}
 
 		if (current_token(parser).type == TOK_RCURLY) peek(parser);
-		else parser_error("A '}' expected", current_token(parser));
+		else
+			parser_error(PARSER_ERROR_CLOSING_CURLY_BRACE_EXPECTED_MESSAGE,
+						 current_token(parser));
 
 	} else {
 		if (current_token(parser).type == TOK_ELN) peek(parser);
 		current = parse_statement(parser);
 		if (current != NULL) add_child(block_stmt, current);
-		else parser_error("Error creating statement", current_token(parser));
+		else
+			parser_error(PARSER_ERROR_WRONG_STATEMENT_FORMAT,
+						 current_token(parser));
 	}
 	return block_stmt;
 }
@@ -610,7 +633,9 @@ Node *parse_temp_print_int(Parser *parser) {
 		current = parse_expression(parser);
 
 		if (current_token(parser).type == TOK_RPAREN) peek(parser);
-		else parser_error("A ')' expected in print int", current_token(parser));
+		else
+			parser_error(PARSER_ERROR_CLOSING_PARENTHESIS_EXPECTED_MESSAGE,
+						 current_token(parser));
 		add_child(print_stmt, current);
 	}
 	return print_stmt;
@@ -629,7 +654,7 @@ Node *parse_temp_print_char(Parser *parser) {
 
 		if (current_token(parser).type == TOK_RPAREN) peek(parser);
 		else
-			parser_error("A ')' expected int print char",
+			parser_error(PARSER_ERROR_CLOSING_PARENTHESIS_EXPECTED_MESSAGE,
 						 current_token(parser));
 		add_child(print_stmt, current);
 	}

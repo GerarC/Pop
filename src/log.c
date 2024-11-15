@@ -17,46 +17,46 @@ void logger(LogType type, const char *file, const int line, const char *message,
 	FILE *output;
 	switch (type) {
 		case LOG_TRACE:
-			strcpy(tag, "TRACE");
+			strcpy(tag, LOG_TEXT_TRACE);
 			strcpy(color, COLOR_TRACE);
 			output = stdout;
 			break;
 		case LOG_DEBUG:
-			strcpy(tag, "DEBUG");
+			strcpy(tag, LOG_TEXT_DEBUG);
 			strcpy(color, COLOR_DEBUG);
 			output = stdout;
 			break;
 		case LOG_INFO:
-			strcpy(tag, "INFO ");
+			strcpy(tag, LOG_TEXT_INFO);
 			strcpy(color, COLOR_INFO);
 			output = stdout;
 			break;
 		case LOG_WARN:
-			strcpy(tag, "WARN ");
+			strcpy(tag, LOG_TEXT_WARN);
 			output = stdout;
 			strcpy(color, COLOR_WARN);
 			break;
 		case LOG_ERROR:
-			strcpy(tag, "ERROR");
+			strcpy(tag, LOG_TEXT_ERROR);
 			strcpy(color, COLOR_ERROR);
 			output = stderr;
 			break;
 		case LOG_FATAL:
-			strcpy(tag, "FATAL");
+			strcpy(tag, LOG_TEXT_FATAL);
 			strcpy(color, COLOR_FATAL);
 			output = stderr;
 			break;
 	}
 
-	if (PRINT_COLORS) fprintf(output, "%s%s [%s]", color, date, tag);
-	else fprintf(output, "%s [%s]", date, tag);
+	if (PRINT_COLORS) fprintf(output, LOG_OUTPUT_TAG_COLORED, color, date, tag);
+	else fprintf(output,LOG_OUTPUT_TAG, date, tag);
 
-	if (PRINT_FILE) fprintf(output, " %s:", file);
+	if (PRINT_FILE) fprintf(output,LOG_OUTPUT_FILE, file);
 
-	if (PRINT_LINE) fprintf(output, "%u: ", line);
-	else fprintf(output, ": ");
+	if (PRINT_LINE) fprintf(output, LOG_OUTPUT_LINE, line);
+	else fprintf(output, LOG_OUTPUT_COLON);
 
-	if (PRINT_COLORS) fprintf(output, "%s", COLOR_RESET);
+	if (PRINT_COLORS) fprintf(output, LOG_OUTPUT_FINAL_COLOR, COLOR_RESET);
 
 	va_start(ap, message);
 	vfprintf(output, message, ap);

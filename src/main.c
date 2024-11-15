@@ -1,3 +1,5 @@
+#include "../include/constant/common.constants.h"
+#include "../include/constant/main.constants.h"
 #include "../include/file.h"
 #include "../include/generation/nasm_x86_64.h"
 #include "../include/ir.h"
@@ -9,19 +11,14 @@
 #include <string.h>
 
 void print_usage(char *program) {
-	log_error("cli error.\n"
-			  "USAGE:\n"
-			  "\t%s -c <file> -> To compile the program\n"
-			  "\t%s -s <file> -> To create only assembler code\n"
-			  "\t%s -o <file> -> output file\n",
-			  program, program, program);
-	exit(1);
+	log_error(USAGE_MESSAGE, program, program, program);
+	exit(EXIT_ERROR_CODE);
 }
 
 int main(int argc, char **argv) {
 
 	if (argc < 3) print_usage(argv[0]);
-	log_info("Pop compiler");
+	log_info(POP_COMPILER);
 
 	int compile = 0;
 	int out_file = 0;
@@ -31,22 +28,22 @@ int main(int argc, char **argv) {
 	char *output_file;
 
 	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-c") == 0) {
+		if (strcmp(argv[i], OPTION_COMPILE) == 0) {
 			if (compile == 1) goto cli_error;
 			i += 1;
 			source_file = argv[i];
 			compile = 1;
 			continue;
-		} else if (strcmp(argv[i], "-o") == 0) {
+		} else if (strcmp(argv[i], OPTION_OUTPUT) == 0) {
 			i += 1;
 			output_file = argv[i];
 			out_file = 1;
 			continue;
-		} else if (strcmp(argv[i], "--debug") == 0) {
+		} else if (strcmp(argv[i], OPTION_DEBUG) == 0) {
 			debug = 1;
 		} else {
 		cli_error:
-			log_fatal("Bad argument '%s'", argv[i]);
+			log_fatal(ERROR_BAD_ARGUMENT_MESSAGE, argv[i]);
 			exit(1);
 		}
 	}
