@@ -2,6 +2,7 @@
 #include "../include/constant/common.constants.h"
 #include "../include/constant/parser.constants.h"
 #include "../include/log.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,6 +76,7 @@ Node *parse_statement(Parser *parser);
 
 Node *parse_declaration(Parser *parser);
 Node *parse_variable_declaration(Parser *parser);
+Node *parse_function_argument_declaration(Parser *parser);
 Node *parse_type(Parser *parser);
 Node *parse_idents(Parser *parser);
 Node *parse_assign(Parser *parser);
@@ -136,7 +138,7 @@ void add_child(Node *parent, Node *child) {
 Token current_token(Parser *parser) {
 	if (parser->pos < parser->length) return parser->tokens[parser->pos];
 	else {
-		Token tok;
+		Token tok = {0};
 		tok.type = TOK_EOF;
 		return tok;
 	}
@@ -188,6 +190,7 @@ Node *parse_program(Parser *parser) {
 			parser_error(PARSER_ERROR_NOT_PARSED_TOKENS_AT_PROGRAM_MESSAGE,
 						 statements->token);
 		}
+		print_ast(current);
 	}
 
 	return statements;
@@ -251,50 +254,101 @@ Node *parse_variable_declaration(Parser *parser) {
 Node *parse_function_declaration(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *declaration = create_ast_node(tok, NT_FUNC_DECLARATION);
-	Node *current = NULL;
+	Node *function_arguments = NULL;
 	peek(parser);
 	Node *func_name = parse_literal(parser);
 	if (func_name != NULL) add_child(declaration, func_name);
 	if (current_token(parser).type == TOK_LPAREN) {
-		parse_function_arguments(parser);
 		peek(parser);
+		function_arguments = parse_function_arguments(parser);
 		if (current_token(parser).type == TOK_RPAREN) peek(parser);
 		else
 			parser_error(PARSER_ERROR_CLOSING_PARENTHESIS_EXPECTED_MESSAGE,
 						 next_token(parser));
 	}
+	if (function_arguments != NULL) add_child(declaration, function_arguments);
 	Node *block = get_block_statements(parser);
 	add_child(declaration, block);
 
 	return declaration;
 }
 
+Node *parse_function_argument_declaration(Parser *parser) {
+	Token tok = current_token(parser);
+	log_info("Argument type -> %s", token_string(tok));
+	Node *declaration = create_ast_node(tok, NT_DECLARATION);
+	Node *identifier = NULL;
+	peek(parser);
+	Token id_tok = current_token(parser);
+	if (id_tok.type == TOK_IDENTIFIER)
+		identifier = create_ast_node(id_tok, NT_IDENTIFIER);
+
+	if (identifier == NULL)
+		parser_error(PARSER_ERROR_IDENTIFIER_EXPECTED, id_tok);
+	add_child(declaration, identifier);
+
+	peek(parser);
+	log_warn("Actual token -> %s", token_string(current_token(parser)));
+
+	return declaration;
+}
+
 Node *parse_function_arguments(Parser *parser) {
-	log_warn("Parse Function Arguments not implemented");
-	return NULL;
+	Token current = current_token(parser);
+	if (current.type == TOK_RPAREN) return NULL;
+
+	Token tok = {TOK_ARGS_GLUE, current_token(parser).location, 0,
+				 PARSER_DEFAULT_GLUE_LEXEME, NULL};
+	Node *arguments = create_ast_node(tok, NT_FUNC_ARGUMENTS_DECLARATION);
+
+	while (is_type(current)) {
+		Node *argument = parse_function_argument_declaration(parser);
+		if (argument == NULL)
+			parser_error(PARSER_ERROR_DECLARATION_WAS_EXPECTED, current);
+            add_child(arguments, argument);
+		if (current_token(parser).type == TOK_COMMA) peek(parser);
+		current = current_token(parser);
+	}
+	return arguments;
 }
 
 Node *parse_function_usage(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *usage = create_ast_node(tok, NT_FUNC_USAGE);
-	Node *current = NULL;
+	Node *function_arguments = NULL;
 	peek(parser);
 	if (current_token(parser).type == TOK_LPAREN) {
-		parse_function_usage_arguments(parser);
 		peek(parser);
+		function_arguments = parse_function_usage_arguments(parser);
 		if (current_token(parser).type == TOK_RPAREN) peek(parser);
 		else
 			parser_error(PARSER_ERROR_CLOSING_PARENTHESIS_EXPECTED_MESSAGE,
 						 next_token(parser));
 	}
+	if (function_arguments != NULL) add_child(usage, function_arguments);
 
 	return usage;
 }
 
 Node *parse_function_usage_arguments(Parser *parser) {
-	log_warn("Parse Function Usage Arguments not implemented");
-	return NULL;
-	peek(parser);
+	Token current = current_token(parser);
+	if (current.type == TOK_RPAREN) return NULL;
+
+	Token tok = {.type = TOK_ARGS_GLUE,
+				 .location = current_token(parser).location,
+				 .value = NULL,
+				 .lexeme = PARSER_DEFAULT_GLUE_LEXEME};
+	Node *arguments_glue = create_ast_node(tok, NT_FUNC_USAGE_ARGUMENTS);
+	while (current.type != TOK_RPAREN) {
+		Node *argument = parse_expression(parser);
+		if (argument == NULL)
+			parser_error(PARSER_ERROR_EXPRESSION_WAS_EXPECTED, current);
+		add_child(arguments_glue, argument);
+		if (current_token(parser).type == TOK_COMMA) peek(parser);
+		current = current_token(parser);
+	}
+
+	return arguments_glue;
 }
 
 Node *parse_return(Parser *parser) {
@@ -510,7 +564,8 @@ Node *parse_unary(Parser *parser) {
 Node *parse_literal(Parser *parser) {
 	Token tok = current_token(parser);
 	Node *lit = NULL;
-	if (tok.type == TOK_IDENTIFIER && next_token(parser).type == TOK_LPAREN) {
+	if (tok.type == TOK_IDENTIFIER && next_token(parser).type == TOK_LPAREN &&
+		!is_type(parser->tokens[parser->pos + 2])) {
 		lit = parse_function_usage(parser);
 	} else if (tok.type == TOK_INT || tok.type == TOK_FLOAT ||
 			   tok.type == TOK_LONG || tok.type == TOK_BOOL ||
@@ -560,6 +615,8 @@ void print_helper(Node *root, const char *prefix, int is_left, int is_root) {
 	if (root->token.type == TOK_MAIN) printf(PARSER_PRINT_TOKEN_MAIN);
 	else if (root->token.type == TOK_BLOCK_GLUE)
 		printf(PARSER_PRINT_TOKEN_BLOCK_GLUE);
+	else if (root->token.type == TOK_ARGS_GLUE)
+		printf(PARSER_PRINT_TOKEN_ARGUMENT_GLUE);
 	else if (root->token.lexeme == NULL) printf(PARSER_PRINT_TOKEN_NULL);
 	else printf(PARSER_PRINT_TOKEN_TEMPLATE, root->token.lexeme);
 

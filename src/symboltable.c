@@ -140,9 +140,10 @@ void free_symbol_table(SymbolTable *table) {
 }
 
 void print_symbol(Symbol *sym) {
-	printf("%s: %i,%i sc=%i dt=%i st=%i attr=%X ofs=%i", sym->name,
-		   sym->loc.line, sym->loc.col, sym->scope, sym->dtype, sym->stype,
-		   sym->attrs, sym->offset);
+	printf(
+		"%s: %i,%i scope=%i data_type=%i structure_type=%i attr=%X offset=%i",
+		sym->name, sym->loc.line, sym->loc.col, sym->scope, sym->dtype,
+		sym->stype, sym->attrs, sym->offset);
 	if (sym->members != NULL) {
 		printf(" Members:\n");
 		print_table(sym->members);

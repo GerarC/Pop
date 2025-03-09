@@ -155,8 +155,6 @@ void function_usage_analysis(Node *funct) {
 	if (idx == -1) semantic_error("Type doesn't exists", funct);
 	const char *type = find_symbol_type(sem_table, idx);
 	strncpy(funct->sem_type, type, MAX_SYMBOL_SIZE);
-
-	print_symbol_table(sem_table);
 }
 
 void assignment_analysis(Node *assignment) {

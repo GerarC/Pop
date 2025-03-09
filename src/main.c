@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
 		if (debug) print_ast(ast);
 
 		semantic_analysis(ast, table);
+		if (debug) print_symbol_table(table);
 
 		IntermediateRepresentation *ir =
 			create_intermediate_representation(ast, table);

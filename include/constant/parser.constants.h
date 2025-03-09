@@ -16,6 +16,7 @@
 #define PARSER_PRINT_PREFIX_LEFT "│  "
 #define PARSER_PRINT_PREFIX_RIGHT "   "
 #define PARSER_PRINT_TOKEN_MAIN ".\n"
+#define PARSER_PRINT_TOKEN_ARGUMENT_GLUE "()\n"
 #define PARSER_PRINT_TOKEN_BLOCK_GLUE "{}\n"
 #define PARSER_PRINT_TOKEN_NULL "null\n"
 #define PARSER_PRINT_TOKEN_TEMPLATE "%s\n"
@@ -47,5 +48,8 @@
 	"There's is an invalid unitary format"
 #define PARSER_ERROR_UNEXPECTED_LITERAL_TOKEN "Unexpected literal token"
 #define PARSER_ERROR_WRONG_STATEMENT_FORMAT "Error in format of statement"
+#define PARSER_ERROR_IDENTIFIER_EXPECTED "An identifier was expected"
+#define PARSER_ERROR_EXPRESSION_WAS_EXPECTED "An expression was expected"
+#define PARSER_ERROR_DECLARATION_WAS_EXPECTED "A declaration was expected"
 
 #endif // !PARSER_CONSTANTS_H
